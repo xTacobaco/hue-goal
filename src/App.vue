@@ -1,28 +1,30 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <div id="app">
+        <div id="grid">
+            <grid-row
+                v-for="week in weeks"
+                :key="week"
+                :date="(week - 7)%weeks"
+                :currentWeek="week == weeks"
+                />
+        </div>
+        <div class="btn">I've done todays task!</div>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import dayjs from 'dayjs';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+dayjs.extend(weekOfYear)
 
+import gridRow from '@/components/grid-row';
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+    components: { gridRow },
+    data() {
+        return {
+            dayjs,
+            weeks: 52,
+        };
+    },
+};
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
