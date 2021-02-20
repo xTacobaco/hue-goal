@@ -28,8 +28,16 @@ body {
     bottom: 3%;
     left: 50%;
     background: rgb(45,108,245);
-    /*font-weight: bold;*/
+    border: none;
+    outline: none;
     color: #fff;
     border-radius: 8px;
-    padding: 5px 10px;
+    padding: 10px 15px;
+}
+.btn:hover{
+    background: rgb(34, 82, 185);
+    cursor: pointer;
+}
+.btn:active{
+    background: rgb(28, 68, 155);
 }

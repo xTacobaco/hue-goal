@@ -1,16 +1,19 @@
 <template>
     <div class="week">
-        {{date}}
-        <grid-item 
+        <day-item 
             v-for="day in days"
-            :key="day"/>
+            :key="day"
+            :hue="(date/52)*359"
+            :share="day/weekDays"
+            :done="(day+date)%10<5"
+            />
     </div>
 </template>
 
 <script>
-    import gridItem from '@/components/grid-item.vue';
+    import dayItem from '@/components/day-item';
     export default {
-        components: { gridItem },
+        components: { dayItem },
         data() {
             return {
                 weekDays: 7,
@@ -23,7 +26,6 @@
             },
             date: {
                 type: Number,
-                default: 0,
             },
         },
         computed: {
@@ -31,6 +33,6 @@
                 var currentWeekdays = (new Date()).getDay();
                 return (this.currentWeek ? currentWeekdays : this.weekDays);
             }
-        }
+        },
     }
 </script>
