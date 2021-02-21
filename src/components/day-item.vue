@@ -32,7 +32,7 @@
                 }
             },
             done() {
-                return this.days.find(d => dayjs.unix(d.date.seconds).format('DD/MM-YY') === this.date.format('DD/MM-YY'));
+                return this.days.find(d => dayjs.unix(d.date).format('DD/MM-YY') === this.date.format('DD/MM-YY'));
             }
         },
     }
