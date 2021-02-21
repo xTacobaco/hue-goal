@@ -6,13 +6,19 @@ body {
     background: #161616;
     font-family: 'Roboto', sans-serif;
 }
-#grid {
+.container {
     position: absolute;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -55%);
+    left: 50%;
     top: 50%;
+}
+#grid {
+    position: relative;
+    transform: translate(-50%);
     left: 50%;
 }
 .week {
+    transform: translate(25%);
     display: flex;
 }
 .day {
@@ -23,21 +29,36 @@ body {
     display: inline-block;
 }
 .btn {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    bottom: 3%;
+    position: relative;
+    transform: translate(-50%);
     left: 50%;
-    background: rgb(45,108,245);
+    margin-top: 30px;
+    background-image: linear-gradient(45deg, hsl(271, 70%, 50%), hsl(239, 70%, 50%));
+    box-shadow: 0px 5px 10px rgba(0,0,0,0.5);
+    text-transform: capitalize;
     border: none;
     outline: none;
     color: #fff;
-    border-radius: 8px;
+    border-radius: 20px;
     padding: 10px 15px;
+    width: 200px;
 }
-.btn:hover{
-    background: rgb(34, 82, 185);
-    cursor: pointer;
+@media (hover: hover) {
+    .btn:hover{
+        background-image: linear-gradient(45deg, hsl(271, 70%, 40%), hsl(239, 70%, 40%));
+        cursor: pointer;
+    }
 }
 .btn:active{
-    background: rgb(28, 68, 155);
+    background-image: linear-gradient(45deg, hsl(271, 70%, 35%), hsl(239, 70%, 35%));
+}
+footer {
+    font-size: 0.7rem;
+    color: #aaa;
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    transform: translate(-50%);
+    padding-bottom: 10px;
+    z-index: -1;
 }

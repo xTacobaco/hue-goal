@@ -5,7 +5,8 @@
             :key="day"
             :hue="(date/52)*359"
             :share="day/weekDays"
-            :done="(day+date)%10<5"
+            :date="monday.add(day,'day')"
+            :days="daysarray"
             />
     </div>
 </template>
@@ -26,6 +27,12 @@
             },
             date: {
                 type: Number,
+            },
+            monday: {
+                type: Object,
+            },
+            daysarray: {
+                type: Array,
             },
         },
         computed: {
