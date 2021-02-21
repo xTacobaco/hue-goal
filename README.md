@@ -1,5 +1,7 @@
 # hue-goal
 
+https://hue-goal.web.app/
+
 ## Project setup
 ```
 npm install
