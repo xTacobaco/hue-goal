@@ -2,44 +2,54 @@
     <div class="week">
         <day-item 
             v-for="day in days"
-            :key="day"
-            :hue="(date/52)*359"
-            :share="day/weekDays"
-            :date="monday.add(day,'day')"
-            :days="daysarray"
+            :weekdays="weekdays"
+            :key="day.unix()"
+            :day="day"
             />
     </div>
 </template>
 
 <script>
+    import dayjs from '@/dayjs';
     import dayItem from '@/components/day-item';
+
     export default {
         components: { dayItem },
         data() {
             return {
-                weekDays: 7,
+                dayjs,
+                days: [],
             }
         },
         props: {
-            currentWeek: {
-                type: Boolean,
-                default: true,
-            },
-            date: {
-                type: Number,
-            },
-            monday: {
+            week: {
                 type: Object,
+                required: true,
+                default: () => {}
             },
-            daysarray: {
+            dates: {
                 type: Array,
-            },
-        },
-        computed: {
-            days() {
-                var currentWeekdays = (new Date()).getDay();
-                return (this.currentWeek ? currentWeekdays : this.weekDays);
+                required: true,
+                default: () => []
             }
         },
+        computed: {
+            isCurrentWeek() {
+                return this.week === dayjs().startOf('week');
+            },
+            weekdays() {
+                if (this.isCurrentWeek) {
+                    return dayjs().isoWeekday();
+                } else {
+                    return dayjs.duration(1, 'week').get('days');
+                }
+            }
+        },
+        mounted() {
+            for(let i=0; i < this.weekdays; i++) {
+                let day = this.week.startOf('week');
+                this.days.push(day.add(i, 'days'));
+            }
+        }
     }
 </script>

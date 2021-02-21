@@ -4,14 +4,16 @@
             <div id="grid">
                 <week-row
                     v-for="week in weeks"
-                    :key="week"
-                    :currentWeek="week == weeks"
-                    :date="calculateWeek(week)"
-                    :monday="calculateDate(week)"
-                    :daysarray="days"
+                    :key="week.unix()"
+                    :week="week"
+                    :dates="dates"
                     />
             </div>
-            <button class="btn" @click="doneTask">I've done todays task!</button>
+            <button
+                class="btn"
+                :class="{'finished': today == lastFinished}"
+                @click="registerTask"
+                >I've done todays task!</button>
         </div>
         <footer>William Beinö &copy; {{dayjs().year()}}</footer>
   </div>
@@ -24,7 +26,7 @@ import weekRow from '@/components/week-row';
 
 export default {
     firestore: {
-        days: db.collection('days'),
+        dates: db.collection('dates')
     },
     components: {
         weekRow
@@ -32,22 +34,32 @@ export default {
     data() {
         return {
             dayjs,
-            days: [],
-            weeks: 52,
+            dates: [],
+            weeks: []
         };
     },
-    methods: {
-        calculateWeek(week) {
-            return (this.weeks+dayjs().week()-2+week)%this.weeks+1;
+    computed: {
+        today() {
+            return dayjs().startOf('date').unix();
         },
-        calculateDate(week) { 
-            return dayjs().subtract(this.weeks-week, 'week');
-        },
-        doneTask() {
-            db.collection('days').add({
-                date: dayjs().unix(),
-            });
+        lastFinished() {
+            return this.dates.slice(-1);
         }
     },
+    mounted() {
+        for(let i=dayjs().isoWeeksInYear(); i > 0; i--) {
+            let week = dayjs().startOf('week');
+            this.weeks.push(week.subtract(i, 'week'));
+        }
+    },
+    methods: {
+        registerTask() {
+            let date = dayjs().startOf('date');
+            db.collection('dates').add({
+                id: date.format('LL'),
+                date: date.unix()
+            });
+        }
+    }
 };
 </script>
