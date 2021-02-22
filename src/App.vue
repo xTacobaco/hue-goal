@@ -11,12 +11,12 @@
             </div>
             <button
                 class="btn"
-                :class="{'finished': today == lastFinished}"
+                :class="{ 'finished': today.isSame(lastFinished) }"
                 @click="registerTask"
                 >I've done todays task!</button>
         </div>
         <footer>William Beinö &copy; {{dayjs().year()}}</footer>
-  </div>
+    </div>
 </template>
 
 <script>
@@ -40,24 +40,25 @@ export default {
     },
     computed: {
         today() {
-            return dayjs().startOf('date').unix();
+            return dayjs().startOf('date');
         },
         lastFinished() {
-            return this.dates.slice(-1);
+            let lastFinished = this.dates.slice(-1)[0];
+            return dayjs(lastFinished ? lastFinished.timestamp*1000 : 0);
         }
     },
     mounted() {
-        for(let i=dayjs().isoWeeksInYear(); i > 0; i--) {
-            let week = dayjs().startOf('week');
+        let week = dayjs().startOf('isoWeek');
+        for(let i=0; i < dayjs().isoWeeksInYear(); i++) {
             this.weeks.push(week.subtract(i, 'week'));
         }
+        this.weeks.reverse();
     },
     methods: {
         registerTask() {
             let date = dayjs().startOf('date');
-            db.collection('dates').add({
-                id: date.format('LL'),
-                date: date.unix()
+            db.collection('dates').doc(date.format('LL')).set({
+                timestamp: date.unix()
             });
         }
     }

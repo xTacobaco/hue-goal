@@ -1,5 +1,5 @@
 <template>
-    <span class="day" :style="dayStyle" @click="log()"/>
+    <span class="day" :style="dayStyle"/>
 </template>
 
 <script>
@@ -22,6 +22,11 @@
                 type: Number,
                 required: true,
                 defualt: 0
+            },
+            active: {
+                type: Boolean,
+                required: false,
+                default: false
             }
         },
         computed: {
@@ -29,29 +34,17 @@
                 return this.day.format('LL');
             },
             dayStyle() {
-                let color = this.finished ? `hsl(${this.hue}, 70%, ${this.light}%)` : "#161616";
-                let border_color = this.finished ? `hsl(${this.hue}, 70%, ${this.border_light}%)` : "#181818";
+                let color = this.active ? `hsl(${this.hue}, 70%, ${this.light}%)` : "#161616";
+                let border_color = this.active ? `hsl(${this.hue}, 70%, ${this.light-1}%)` : "#181818";
                 return {
                     background: color,
                     borderColor: border_color
                 }
-            },
-            finished() {
-                return true;
-                //return this.days.find(d => dayjs.unix(d.date).format('DD/MM-YY') === this.date.format('DD/MM-YY'));
             }
         },
         mounted() {
-            this.hue = this.day.week()/dayjs().isoWeeksInYear()*359;
-
-            let magic = this.day.day()/this.weekdays*30
-            this.light = 50-magic;
-            this.border_light = 49-magic;
-        },
-        methods: {
-            log() {
-                console.log(this.day.format('LL'));
-            }
+            this.hue = this.day.isoWeek()/dayjs().isoWeeksInYear()*359;
+            this.light = 50-(this.day.isoWeekday()-1)/this.weekdays*30;
         }
     }
 </script>

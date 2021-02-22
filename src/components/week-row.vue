@@ -1,7 +1,8 @@
 <template>
     <div class="week">
-        <day-item 
+        <day-node
             v-for="day in days"
+            :active="unixDates.includes(day.unix())"
             :weekdays="weekdays"
             :key="day.unix()"
             :day="day"
@@ -11,10 +12,10 @@
 
 <script>
     import dayjs from '@/dayjs';
-    import dayItem from '@/components/day-item';
+    import dayNode from '@/components/day-node';
 
     export default {
-        components: { dayItem },
+        components: { dayNode },
         data() {
             return {
                 dayjs,
@@ -35,7 +36,7 @@
         },
         computed: {
             isCurrentWeek() {
-                return this.week === dayjs().startOf('week');
+                return dayjs().startOf('isoWeek').isSame(this.week);
             },
             weekdays() {
                 if (this.isCurrentWeek) {
@@ -43,11 +44,14 @@
                 } else {
                     return dayjs.duration(1, 'week').get('days');
                 }
+            },
+            unixDates() {
+                return this.dates.map(d => d.timestamp);
             }
         },
         mounted() {
+            let day = this.week.startOf('isoWeek');
             for(let i=0; i < this.weekdays; i++) {
-                let day = this.week.startOf('week');
                 this.days.push(day.add(i, 'days'));
             }
         }
