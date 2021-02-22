@@ -1,45 +1,59 @@
 <template>
     <div class="week">
-        <day-item 
+        <day-node
             v-for="day in days"
-            :key="day"
-            :hue="(date/52)*359"
-            :share="day/weekDays"
-            :date="monday.add(day,'day')"
-            :days="daysarray"
+            :active="unixDates.includes(day.unix())"
+            :weekdays="weekdays"
+            :key="day.unix()"
+            :day="day"
             />
     </div>
 </template>
 
 <script>
-    import dayItem from '@/components/day-item';
+    import dayjs from '@/dayjs';
+    import dayNode from '@/components/day-node';
+
     export default {
-        components: { dayItem },
+        components: { dayNode },
         data() {
             return {
-                weekDays: 7,
+                dayjs,
+                days: [],
             }
         },
         props: {
-            currentWeek: {
-                type: Boolean,
-                default: true,
-            },
-            date: {
-                type: Number,
-            },
-            monday: {
+            week: {
                 type: Object,
+                required: true,
+                default: () => {}
             },
-            daysarray: {
+            dates: {
                 type: Array,
-            },
-        },
-        computed: {
-            days() {
-                var currentWeekdays = (new Date()).getDay();
-                return (this.currentWeek ? currentWeekdays : this.weekDays);
+                required: true,
+                default: () => []
             }
         },
+        computed: {
+            isCurrentWeek() {
+                return dayjs().startOf('isoWeek').isSame(this.week);
+            },
+            weekdays() {
+                if (this.isCurrentWeek) {
+                    return dayjs().isoWeekday();
+                } else {
+                    return dayjs.duration(1, 'week').get('days');
+                }
+            },
+            unixDates() {
+                return this.dates.map(d => d.timestamp);
+            }
+        },
+        mounted() {
+            let day = this.week.startOf('isoWeek');
+            for(let i=0; i < this.weekdays; i++) {
+                this.days.push(day.add(i, 'days'));
+            }
+        }
     }
 </script>

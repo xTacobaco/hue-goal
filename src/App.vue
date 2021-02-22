@@ -4,17 +4,19 @@
             <div id="grid">
                 <week-row
                     v-for="week in weeks"
-                    :key="week"
-                    :currentWeek="week == weeks"
-                    :date="calculateWeek(week)"
-                    :monday="calculateDate(week)"
-                    :daysarray="days"
+                    :key="week.unix()"
+                    :week="week"
+                    :dates="dates"
                     />
             </div>
-            <button class="btn" @click="doneTask">I've done todays task!</button>
+            <button
+                class="btn"
+                :class="{ 'finished': today.isSame(lastFinished) }"
+                @click="registerTask"
+                >I've done todays task!</button>
         </div>
         <footer>William Beinö &copy; {{dayjs().year()}}</footer>
-  </div>
+    </div>
 </template>
 
 <script>
@@ -24,7 +26,7 @@ import weekRow from '@/components/week-row';
 
 export default {
     firestore: {
-        days: db.collection('days'),
+        dates: db.collection('dates')
     },
     components: {
         weekRow
@@ -32,22 +34,33 @@ export default {
     data() {
         return {
             dayjs,
-            days: [],
-            weeks: 52,
+            dates: [],
+            weeks: []
         };
     },
-    methods: {
-        calculateWeek(week) {
-            return (this.weeks+dayjs().week()-2+week)%this.weeks+1;
+    computed: {
+        today() {
+            return dayjs().startOf('date');
         },
-        calculateDate(week) { 
-            return dayjs().subtract(this.weeks-week, 'week');
-        },
-        doneTask() {
-            db.collection('days').add({
-                date: dayjs().unix(),
-            });
+        lastFinished() {
+            let lastFinished = this.dates.slice(-1)[0];
+            return dayjs(lastFinished ? lastFinished.timestamp*1000 : 0);
         }
     },
+    mounted() {
+        let week = dayjs().startOf('isoWeek');
+        for(let i=0; i < dayjs().isoWeeksInYear(); i++) {
+            this.weeks.push(week.subtract(i, 'week'));
+        }
+        this.weeks.reverse();
+    },
+    methods: {
+        registerTask() {
+            let date = dayjs().startOf('date');
+            db.collection('dates').doc(date.format('LL')).set({
+                timestamp: date.unix()
+            });
+        }
+    }
 };
 </script>
