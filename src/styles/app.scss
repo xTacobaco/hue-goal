@@ -1,0 +1,47 @@
+@import "_fonts.scss";
+@import "_typography.scss";
+@import "_variables.scss";
+
+* {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background: $bg-color;
+}
+
+#app {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.section {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.fake-link {
+    color: #ccc;
+    cursor: pointer;
+    font-size: $normal-font;
+    border-bottom: 1px solid #ccc;
+}
+
+footer {
+    text-align: center;
+    font-size: $smol-font;
+    margin-top: auto;
+    padding: 15px 0;
+    color: #999;
+}
+
+@import "buttons.scss";
+@import "week-grid.scss";

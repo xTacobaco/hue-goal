@@ -11,7 +11,7 @@
 </template>
 
 <script>
-    import dayjs from '@/dayjs';
+    import dayjs from '@/utils/dayjs';
     import dayNode from '@/components/day-node';
 
     export default {

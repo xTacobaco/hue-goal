@@ -1,0 +1,14 @@
+.week {
+    display: flex;
+    width: 70px;
+    margin: auto;
+    text-align: left;
+}
+
+.day {
+    width: 8px;
+    height: 8px;
+    display: inline-block;
+    background-color: $day-color;
+    border: $day-border-color 1px solid;
+}

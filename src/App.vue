@@ -1,41 +1,44 @@
 <template>
     <div id="app">
-        <div class="container">
-            <div id="grid">
-                <week-row
+        <div class="wrapper">
+            <div class="section">
+                <week-grid
                     v-for="week in weeks"
                     :key="week.unix()"
                     :week="week"
                     :dates="dates"
                     />
             </div>
-            <button
-                class="btn"
-                :class="{ 'finished': today.isSame(lastFinished) }"
-                @click="registerTask"
-                >I've done todays task!</button>
+            <div class="section">
+                <checkmark-button :done="today.isSame(lastFinished)" @click.native="registerTask">I've done todays task!</checkmark-button>
+                <br/>
+                <a class="fake-link" @click="registerUser">Login to sync your progress</a>
+            </div>
         </div>
         <footer>William Beinö &copy; {{dayjs().year()}}</footer>
     </div>
 </template>
 
 <script>
-import db from '@/db';
-import dayjs from '@/dayjs';
-import weekRow from '@/components/week-row';
+import db from '@/utils/firestore.js';
+import dayjs from '@/utils/dayjs.js';
+import weekGrid from '@/components/week-grid.vue';
+import checkmarkButton from '@/components/checkmark-button.vue';
 
 export default {
     firestore: {
         dates: db.collection('dates')
     },
     components: {
-        weekRow
+        weekGrid,
+        checkmarkButton
     },
     data() {
         return {
             dayjs,
             dates: [],
-            weeks: []
+            weeks: [],
+            test: false
         };
     },
     computed: {
@@ -60,6 +63,9 @@ export default {
             db.collection('dates').doc(date.format('LL')).set({
                 timestamp: date.unix()
             });
+        },
+        registerUser() {
+            //magic
         }
     }
 };
