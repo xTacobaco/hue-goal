@@ -13,7 +13,7 @@
                 <checkmark-button :done="today.isSame(lastFinished)" @click.native="registerTask">I've done todays task!</checkmark-button>
                 <br/>
                 <a v-if="! isLoggedIn" class="fake-link" @click="registerUser">Login to sync your progress</a>
-                <p v-else-if="email">Logged in as:<br/>{{ userEmail }}</p>
+                <p v-else-if="userEmail">Logged in as:<br/>{{ userEmail }}</p>
             </div>
         </div>
         <footer>William Beinö &copy; {{ dayjs().year() }}</footer>
