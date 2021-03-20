@@ -1,12 +1,12 @@
 <template>
     <div class="week">
         <day-node
-            v-for="day in days"
-            :active="unixDates.includes(day.unix())"
-            :weekdays="weekdays"
-            :key="day.unix()"
-            :day="day"
-            />
+        v-for="day in days"
+        :active="unixDates.includes(day.unix())"
+        :weekdays="weekdays"
+        :key="day.unix()"
+        :day="day"
+        />
     </div>
 </template>
 

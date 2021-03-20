@@ -35,7 +35,7 @@
             },
             dayStyle() {
                 let color = this.active ? `hsl(${this.hue}, 70%, ${this.light}%)` : "#161616";
-                let border_color = this.active ? `hsl(${this.hue}, 70%, ${this.light-1}%)` : "#181818";
+                let border_color = this.active ? `hsl(${this.hue}, 70%, ${this.light-1}%)` : `#202020`;
                 return {
                     background: color,
                     borderColor: border_color

@@ -1,6 +1,7 @@
-@import "_fonts.scss";
-@import "_typography.scss";
-@import "_variables.scss";
+@use "abstracts/_colors.scss";
+@use "abstracts/_fonts.scss";
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
 * {
     font-family: 'Roboto', sans-serif;
@@ -13,7 +14,7 @@ html, body {
 }
 
 body {
-    background: $bg-color;
+    background: colors.$bg-color;
 }
 
 #app {
@@ -21,7 +22,6 @@ body {
     display: flex;
     flex-direction: column;
 }
-
 
 .section {
     text-align: center;
@@ -31,17 +31,18 @@ body {
 .fake-link {
     color: #ccc;
     cursor: pointer;
-    font-size: $normal-font;
+    font-size: fonts.$normal-font;
+    line-height: fonts.$normal-line-height;
     border-bottom: 1px solid #ccc;
 }
 
 footer {
     text-align: center;
-    font-size: $smol-font;
+    font-size: fonts.$smol-font;
     margin-top: auto;
     padding: 15px 0;
     color: #999;
 }
 
-@import "buttons.scss";
-@import "week-grid.scss";
+@import "components/_buttons.scss";
+@import "components/_week-grid.scss";

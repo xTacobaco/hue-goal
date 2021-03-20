@@ -12,6 +12,12 @@
     transform-origin: bottom left;
 }
 
+.check-enter, .check-leave-to {
+    width: 0px;
+    height: 0px;
+    opacity: 0;
+}
+
 .check-enter-active {
     transition:
         opacity .1s ease-out 1s,
@@ -24,10 +30,4 @@
         opacity .1s ease-out,
         width 0s ease-in 1s,
         height 0s ease-out 1s;
-}
-
-.check-enter, .check-leave-to {
-    width: 0px;
-    height: 0px;
-    opacity: 0;
 }

@@ -1,0 +1,9 @@
+$normal-font: 0.8rem;
+$normal-line-height: 1.1rem;
+$smol-font: 0.7rem;
+
+p {
+    color: #ccc;
+    font-size: $normal-font;
+    line-height: $normal-line-height;
+}

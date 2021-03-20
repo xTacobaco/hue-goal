@@ -1,3 +1,5 @@
+@use "../abstracts/_colors.scss";
+
 .week {
     display: flex;
     width: 70px;
@@ -9,6 +11,6 @@
     width: 8px;
     height: 8px;
     display: inline-block;
-    background-color: $day-color;
-    border: $day-border-color 1px solid;
+    background-color: colors.$day-color;
+    border: colors.$day-border-color 1px solid;
 }
