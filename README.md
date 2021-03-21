@@ -1,26 +1,24 @@
-# hue-goal
+# Hue Goal
 
-https://hue-goal.web.app/
+Hue Goal is a simple task-tracker for any goal you have set for yourself.
 
-## Project setup
-```
-npm install
-```
+Big or small, use Hue Goal to track tasks like:
+ * coding
+ * flossing
+ * practicing an instrument
+ * learning a new word
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+https://huegoal.com/
 
-### Compiles and minifies for production
-```
-npm run build
-```
+### Setting Up Dev Environment
 
-### Lints and fixes files
-```
-npm run lint
-```
+1. Clone the repo to a neat location.
+2. ``npm install``
+3. ``npm run serve``
+4. **BOOM SMACK!** 
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+### Deploying To Production
+
+1. Get your code into the master branch.
+2. Github workflows takes care of the rest.
+3. **BOOM SMACK!** 
