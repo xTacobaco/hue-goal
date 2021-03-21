@@ -105,7 +105,11 @@ export default {
             });
         },
         registerUser() {
-            auth.currentUser.linkWithRedirect(googleProvider);
+            if (auth.currentUser) {
+                auth.currentUser.linkWithRedirect(googleProvider);
+            } else {
+                auth.signInWithRedirect(googleProvider);
+            }
         }
     },
     watch: {
