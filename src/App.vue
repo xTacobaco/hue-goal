@@ -3,10 +3,11 @@
         <div class="wrapper">
             <div class="section">
                 <week-grid
-                v-for="week in weeks"
+                v-for="(week, index) in weeks"
                 :key="week.unix()"
                 :week="week"
                 :dates="dates"
+                :pos="index"
                 />
             </div>
             <div class="section">
@@ -21,10 +22,11 @@
 </template>
 
 <script>
-import { users } from '@/utils/db.js';
-import { auth, googleProvider } from '@/utils/auth.js';
 
-import dayjs from '@/utils/dayjs.js';
+import dayjs from '@/utils/dayjs';
+import bus from '@/utils/eventbus';
+import { users } from '@/utils/db';
+import { auth, googleProvider } from '@/utils/auth';
 import weekGrid from '@/components/week-grid.vue';
 import checkmarkButton from '@/components/checkmark-button.vue';
 
@@ -52,7 +54,7 @@ export default {
             return dayjs.unix(lastFinished.timestamp);
         },
         isLoggedIn() {
-            let user = this.user || JSON.parse(localStorage.user);
+            let user = this.user || JSON.parse(localStorage.user || null);
             return user && ! user.isAnonymous;
         },
         userEmail() {
@@ -84,15 +86,18 @@ export default {
     methods: {
         registerTask() {
             let date = dayjs().startOf('date');
+            let last = this.lastFinished;
             users.doc(this.user.uid).collection('dates').doc(date.format('YYYY-MM-DD')).set({
                 timestamp: date.unix()
+            }).then(() => {
+                if (! date.isSame(last)) {
+                    bus.$emit('animation', [dayjs().isoWeekday()-1, this.weeks.length-1]);
+                }
             });
+            
         },
         registerUser() {
-            auth.currentUser.linkWithRedirect(googleProvider)
-                .catch((error) => {
-                    console.log("its error time", error);
-                });
+            auth.currentUser.linkWithRedirect(googleProvider);
         }
     },
     watch: {
@@ -101,7 +106,13 @@ export default {
         },
         user: {
             handler(user) {
-                this.$bind('dates', users.doc(user.uid).collection('dates'));
+                this.$bind('dates', users.doc(user.uid).collection('dates')).then((dates) => {
+                    if (dates.length > 0) {
+                        bus.$emit('animation', [dayjs().isoWeekday()-1, this.weeks.length-1]);
+                    } else {
+                        bus.$emit('animation', [3, this.weeks.length/2]);
+                    }
+                });
                 localStorage.user = JSON.stringify(user);
             },
         },

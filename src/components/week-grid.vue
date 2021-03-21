@@ -2,7 +2,8 @@
     <div class="week">
         <day-node
         v-for="day in days"
-        :active="unixDates.includes(day.unix())"
+        :done="unixDates.includes(day.unix())"
+        :cords="[day.isoWeekday()-1, pos]"
         :weekdays="weekdays"
         :key="day.unix()"
         :day="day"
@@ -32,6 +33,11 @@
                 type: Array,
                 required: true,
                 default: () => []
+            },
+            pos: {
+                type: Number,
+                required: true,
+                default: 0
             }
         },
         computed: {
