@@ -75,6 +75,11 @@ export default {
                 this.user = user;
             }
         });
+        auth.getRedirectResult().catch((error) => {
+            if (error.credential) {
+                auth.signInWithCredential(error.credential);
+            }
+        });
     },
     methods: {
         registerTask() {
@@ -84,7 +89,10 @@ export default {
             });
         },
         registerUser() {
-            auth.currentUser.linkWithRedirect(googleProvider);
+            auth.currentUser.linkWithRedirect(googleProvider)
+                .catch((error) => {
+                    console.log("its error time", error);
+                });
         }
     },
     watch: {
