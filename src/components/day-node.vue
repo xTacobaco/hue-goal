@@ -72,7 +72,6 @@
                 var dist = this.cords
                     .map((p, index) => Math.abs(p - pos[index]))
                     .reduce((a, b) => Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2)), 0)
-                this.distance = dist;
 
                 setTimeout(() => {
                     if (this.animated) {

@@ -11,7 +11,7 @@
                 />
             </div>
             <div class="section">
-                <checkmark-button :done="today.isSame(lastFinished)" @click.native="registerTask">I've done todays task!</checkmark-button>
+                <checkmark-button :done="today.isSame(lastFinished)" @click.native="validateUser">I've done todays task!</checkmark-button>
                 <br/>
                 <a v-if="! isLoggedIn" class="fake-link" @click="registerUser">Login to sync your progress</a>
                 <p v-else-if="userEmail">Logged in as:<br/>{{ userEmail }}</p>
@@ -72,7 +72,7 @@ export default {
         auth.onAuthStateChanged((user) => {
             if (! user) {
                 localStorage.clear();
-                auth.signInAnonymously();
+                bus.$emit('animation', [3, this.weeks.length/2]);
             } else {
                 this.user = user;
             }
@@ -84,17 +84,25 @@ export default {
         });
     },
     methods: {
+        validateUser() {
+            if (! auth.currentUser) {
+                auth.signInAnonymously().then(() => {
+                    this.registerTask();
+                });
+            } else {
+                this.registerTask();
+            }
+        },
         registerTask() {
             let date = dayjs().startOf('date');
             let last = this.lastFinished;
-            users.doc(this.user.uid).collection('dates').doc(date.format('YYYY-MM-DD')).set({
+            users.doc(auth.currentUser.uid).collection('dates').doc(date.format('YYYY-MM-DD')).set({
                 timestamp: date.unix()
             }).then(() => {
                 if (! date.isSame(last)) {
                     bus.$emit('animation', [dayjs().isoWeekday()-1, this.weeks.length-1]);
                 }
             });
-            
         },
         registerUser() {
             auth.currentUser.linkWithRedirect(googleProvider);
@@ -109,8 +117,6 @@ export default {
                 this.$bind('dates', users.doc(user.uid).collection('dates')).then((dates) => {
                     if (dates.length > 0) {
                         bus.$emit('animation', [dayjs().isoWeekday()-1, this.weeks.length-1]);
-                    } else {
-                        bus.$emit('animation', [3, this.weeks.length/2]);
                     }
                 });
                 localStorage.user = JSON.stringify(user);
