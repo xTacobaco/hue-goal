@@ -3,7 +3,7 @@ module.exports = {
       config
       .plugin('html')
       .tap(args => {
-        args[0].title = 'Hue Goal'
+        args[0].title = 'Hue Goal - Tracking Tasks Made Colorful'
         return args
       })
     }
