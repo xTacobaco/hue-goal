@@ -14,7 +14,10 @@
                 <checkmark-button :done="today.isSame(lastFinished)" @click.native="validateUser">I've done todays task!</checkmark-button>
                 <br/>
                 <a v-if="! isLoggedIn" class="fake-link" @click="registerUser">Login to sync your progress</a>
-                <p v-else-if="userEmail">Logged in as:<br/>{{ userEmail }}</p>
+                <template v-else-if="userEmail">
+                    <p>Logged in as:<br/>{{ userEmail }}</p>
+                    <a href="#" @click="logout">Log out</a>
+                </template>
             </div>
         </div>
         <footer>William Beinö &copy; {{ dayjs().year() }}</footer>
@@ -109,6 +112,10 @@ export default {
             } else {
                 auth.signInWithRedirect(googleProvider);
             }
+        },
+        logout() {
+            auth.signOut();
+            location.reload(); 
         }
     },
     watch: {
