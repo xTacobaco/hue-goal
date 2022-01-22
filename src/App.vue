@@ -78,7 +78,7 @@ export default {
   },
   methods: {
     registerTask() {
-      if (!this.today.isSame(this.lastFinished)) {
+      if (this.today.isSame(this.lastFinished)) {
         return;
       }
       
