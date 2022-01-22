@@ -1,7 +1,8 @@
-import fb from './config'
-import 'firebase/auth'
-
-const auth = fb.auth()
-const googleProvider = new fb.auth.GoogleAuthProvider()
-
-export { auth, googleProvider }
+import {
+    getAuth,
+    onAuthStateChanged,
+    getRedirectResult,
+    signInWithCredential,
+} from 'firebase/auth';
+const auth = getAuth();
+export { auth, onAuthStateChanged, getRedirectResult, signInWithCredential };

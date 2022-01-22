@@ -1,50 +1,31 @@
 {
-  "name": "hue-goal",
-  "version": "0.1.0",
-  "private": true,
+  "name": "hue-goal-vite",
+  "version": "1.0.0",
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
-    "pretty": "prettier --write \"**/*.js\""
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "dependencies": {
-    "core-js": "^3.6.5",
-    "dayjs": "^1.10.4",
-    "firebase": "^8.2.9",
-    "vue": "^2.6.11",
-    "vuefire": "^2.2.5"
+    "dayjs": "^1.10.7",
+    "firebase": "^9.6.1",
+    "mitt": "^3.0.0",
+    "vue": "^3.2.25",
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "~4.5.0",
-    "@vue/cli-plugin-eslint": "~4.5.0",
-    "@vue/cli-service": "~4.5.0",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^6.7.2",
-    "eslint-plugin-vue": "^6.2.2",
-    "node-sass": "^5.0.0",
-    "sass": "^1.32.8",
-    "sass-loader": "^10.1.1",
-    "style-loader": "^2.0.0",
-    "vue-template-compiler": "^2.6.11"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended"
-    ],
-    "parserOptions": {
-      "parser": "babel-eslint"
-    },
-    "rules": {}
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead"
-  ]
+    "@babel/core": "^7.16.7",
+    "@storybook/addon-actions": "^6.5.0-alpha.5",
+    "@storybook/addon-essentials": "^6.5.0-alpha.5",
+    "@storybook/addon-links": "^6.5.0-alpha.5",
+    "@storybook/vue3": "^6.5.0-alpha.5",
+    "@vitejs/plugin-vue": "^2.0.0",
+    "babel-loader": "^8.2.3",
+    "sass": "^1.45.2",
+    "storybook-builder-vite": "^0.1.13",
+    "vite": "^2.7.2",
+    "vue-loader": "^16.8.3"
+  }
 }

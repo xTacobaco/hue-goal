@@ -1,5 +1,5 @@
-@use "abstracts/_colors.scss";
-@use "abstracts/_fonts.scss";
+@use 'abstracts/_colors.scss';
+@use 'abstracts/_fonts.scss';
 
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
@@ -9,7 +9,8 @@
     padding: 0;
 }
 
-html, body {
+html,
+body {
     height: 100%;
 }
 
@@ -44,5 +45,6 @@ footer {
     color: #999;
 }
 
-@import "components/_buttons.scss";
-@import "components/_week-grid.scss";
+@import 'components/buttons.scss';
+@import 'components/checkmark-button.scss';
+@import 'components/week-grid.scss';

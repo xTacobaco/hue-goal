@@ -1,137 +1,115 @@
 <template>
-    <div id="app">
-        <div class="wrapper">
-            <div class="section">
-                <week-grid
-                v-for="(week, index) in weeks"
-                :key="week.unix()"
-                :week="week"
-                :dates="dates"
-                :pos="index"
-                />
-            </div>
-            <div class="section">
-                <checkmark-button :done="today.isSame(lastFinished)" @click.native="validateUser">I've done todays task!</checkmark-button>
-                <br/>
-                <a v-if="! isLoggedIn" class="fake-link" @click="registerUser">Login to sync your progress</a>
-                <template v-else-if="userEmail">
-                    <p>Logged in as:<br/>{{ userEmail }}</p>
-                    <a href="#" @click="logout">Log out</a>
-                </template>
-            </div>
-        </div>
-        <footer>William Beinö &copy; {{ dayjs().year() }}</footer>
+  <div class="wrapper">
+    <div class="section">
+      <week-grid
+        v-for="(week, index) in weeks"
+        :key="week.unix()"
+        :week="week"
+        :dates="dates"
+        :pos="index"
+      />
     </div>
+    <div class="section">
+      <checkmark-button :done="today.isSame(lastFinished)" @click="registerTask"
+        >I've done todays task!</checkmark-button
+      >
+      <br />
+      <template v-if="isLoggedIn">
+        <p>Logged in as:<br />{{ user.email }}</p>
+        <a href="#" @click="signOut">Log out</a>
+      </template>
+      <a v-else class="fake-link" @click="signIn"
+        >Login to sync your progress</a
+      >
+    </div>
+  </div>
+  <footer>Hue Goal by William Beinö &copy; {{ dayjs().year() }}</footer>
 </template>
 
 <script>
-import dayjs from '@/utils/dayjs';
-import bus from '@/utils/eventbus';
-import { users } from '@/utils/db';
-import { auth, googleProvider } from '@/utils/auth';
-import weekGrid from '@/components/week-grid.vue';
-import checkmarkButton from '@/components/checkmark-button.vue';
+import dayjs from "@/utils/dayjs";
+import animations from '@/utils/animations';
+import weekGrid from "@/components/week-grid.vue";
+import checkmarkButton from "@/components/checkmark-button.vue";
+
+import { auth, onAuthStateChanged, getRedirectResult } from "@/utils/auth";
+import { mapGetters } from "vuex";
 
 export default {
-    components: {
-        weekGrid,
-        checkmarkButton
+  components: {
+    weekGrid,
+    checkmarkButton,
+  },
+  data() {
+    return {
+      dayjs,
+      weeks: [],
+    };
+  },
+  created() {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        this.$store.dispatch("autoSignIn", user);
+      } else {
+        animations.startAtMiddle();
+      }
+    });
+    getRedirectResult(auth).catch((error) => {
+      this.$store.dispatch("handleRedirect", error);
+    });
+  },
+  computed: {
+    today() {
+      return dayjs().startOf("date");
     },
-    data() {
-        return {
-            dayjs,
-            dates: [],
-            weeks: [],
-            user: null
-        };
+    lastFinished() {
+      let empty = { timestamp: 0 };
+      let lastFinished = this.dates.slice(-1)[0] || empty;
+      return dayjs.unix(lastFinished.timestamp);
     },
-    computed: {
-        today() {
-            return dayjs().startOf('date');
-        },
-        lastFinished() {
-            let empty = { timestamp: 0 };
-            let stored = { timestamp: localStorage.lastFinished };
-            let lastFinished = this.dates.slice(-1)[0] || stored || empty;
-            return dayjs.unix(lastFinished.timestamp);
-        },
-        isLoggedIn() {
-            let user = this.user || JSON.parse(localStorage.user || null);
-            return user && ! user.isAnonymous;
-        },
-        userEmail() {
-            return (this.user || JSON.parse(localStorage.user)).email;
-        }
-    },
-    mounted() {
-        let week = dayjs().startOf('isoWeek');
-        for(let i=0; i < dayjs().isoWeeksInYear(); i++) {
-            this.weeks.push(week.subtract(i, 'week'));
-        }
-        this.weeks.reverse();
-    },
-    created () {
-        auth.onAuthStateChanged((user) => {
-            if (! user) {
-                localStorage.clear();
-                bus.$emit('animation', [3, this.weeks.length/2]);
-            } else {
-                this.user = user;
-            }
-        });
-        auth.getRedirectResult().catch((error) => {
-            if (error.credential) {
-                auth.signInWithCredential(error.credential);
-            }
-        });
-    },
-    methods: {
-        validateUser() {
-            if (! auth.currentUser) {
-                auth.signInAnonymously().then(() => {
-                    this.registerTask();
-                });
-            } else {
-                this.registerTask();
-            }
-        },
-        registerTask() {
-            let date = dayjs().startOf('date');
-            let last = this.lastFinished;
-            users.doc(auth.currentUser.uid).collection('dates').doc(date.format('YYYY-MM-DD')).set({
-                timestamp: date.unix()
-            }).then(() => {
-                if (! date.isSame(last)) {
-                    bus.$emit('animation', [dayjs().isoWeekday()-1, this.weeks.length-1]);
-                }
-            });
-        },
-        registerUser() {
-            if (auth.currentUser) {
-                auth.currentUser.linkWithRedirect(googleProvider);
-            } else {
-                auth.signInWithRedirect(googleProvider);
-            }
-        },
-        logout() {
-            auth.signOut();
-            location.reload(); 
-        }
-    },
-    watch: {
-        lastFinished(date) {
-            localStorage.lastFinished = date.unix();
-        },
-        user: {
-            handler(user) {
-                this.$bind('dates', users.doc(user.uid).collection('dates')).then((dates) => {
-                    if (dates.length > 0) {
-                        bus.$emit('animation', [dayjs().isoWeekday()-1, this.weeks.length-1]);
-                    }
-                });
-                localStorage.user = JSON.stringify(user);
-            },
-        },
+    ...mapGetters(["user", "isLoggedIn", "dates"]),
+  },
+  mounted() {
+    let week = dayjs().startOf("isoWeek");
+    for (let i = 0; i < dayjs().isoWeeksInYear(); i++) {
+      this.weeks.push(week.subtract(i, "week"));
     }
+    this.weeks.reverse();
+  },
+  methods: {
+    registerTask() {
+      if (!this.today.isSame(this.lastFinished)) {
+        return;
+      }
+      
+      let date = dayjs().startOf("date");
+      if (this.user) {
+        this.finishTask(this.user.id, date);
+      } else {
+        this.$store.dispatch("tempSignIn", (userId) => {
+          this.finishTask(userId, date);
+        });
+      }
+    },
+    finishTask(userId, date){
+      this.$store.dispatch("finishTask", { userId, date });
+      this.$store.dispatch("fetchDates", userId);
+    },
+    signIn() {
+      this.$store.dispatch("signIn");
+    },
+    signOut() {
+      this.$store.dispatch("signOut");
+      location.reload();
+    },
+  },
+  watch: {
+    lastFinished(date) {
+      localStorage.lastFinished = date.unix();
+    },
+    user(user) {
+      this.$store.dispatch("fetchDates", user.id);
+    },
+  },
 };
 </script>

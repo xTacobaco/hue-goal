@@ -1,5 +1,4 @@
-import Vue from 'vue'
+import mitt from "mitt";
+const emitter = mitt();
 
-const bus = new Vue()
-
-export default bus
+export default emitter;
