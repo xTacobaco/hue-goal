@@ -1,6 +1,6 @@
 import fb from '@/utils/config';
 import animations from '@/utils/animations';
-import { getFirestore, getDocs, setDoc, doc, collection } from 'firebase/firestore';
+import { getFirestore, getDoc, updateDoc, doc, arrayUnion } from 'firebase/firestore';
 
 const db = getFirestore(fb);
 
@@ -15,18 +15,18 @@ export default {
         },
         async addDate(state, { userId, date }) {
             if (userId) {
-                const ref = doc(db, 'users', userId, 'dates', date.format('YYYY-MM-DD'));
-                await setDoc(ref, { timestamp: date.unix() });
+                const ref = doc(db, 'users', userId);
+                await updateDoc(ref, {
+                    "tracks.goal": arrayUnion(date.unix())
+                });
             }
         }
     },
     actions: {
         async fetchDates({ commit }, userId) {
             if (userId) {
-                const snapshots = await getDocs(
-                    collection(db, 'users', userId, 'dates'),
-                );
-                const dates = snapshots.docs.map((doc) => doc.data());
+                const document = await getDoc(doc(db, 'users', userId));
+                const dates = document.data().tracks?.goal?.map(d => { return { timestamp: d } }) || [];
                 commit('setDates', dates);
             }
         },
