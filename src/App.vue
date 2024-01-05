@@ -11,8 +11,8 @@
     </div>
     <div class="section">
       <checkmark-button :done="today.isSame(lastFinished)" @click="registerTask"
-        >I've done todays task!</checkmark-button
-      >
+        >I've done todays task!</checkmark-button>
+      <horizontal-pills v-if="user" :items="tasks" @update:selectedItem="(item) => selectedItem = item"></horizontal-pills>
       <br />
       <template v-if="isLoggedIn">
         <p>Logged in as:<br />{{ user.email }}</p>
@@ -31,19 +31,25 @@ import dayjs from "@/utils/dayjs";
 import animations from '@/utils/animations';
 import weekGrid from "@/components/week-grid.vue";
 import checkmarkButton from "@/components/checkmark-button.vue";
+import horizontalPills from "@/components/horizontal-pills.vue";
 
 import { auth, onAuthStateChanged, getRedirectResult } from "@/utils/auth";
 import { mapGetters } from "vuex";
+
+let tasks = [{name: 'goal'},{name: 'task'}];
 
 export default {
   components: {
     weekGrid,
     checkmarkButton,
+    horizontalPills,
   },
   data() {
     return {
       dayjs,
       weeks: [],
+      tasks: tasks,
+      selectedItem: tasks[0],
     };
   },
   created() {
@@ -84,16 +90,15 @@ export default {
       
       let date = dayjs().startOf("date");
       if (this.user) {
-        this.finishTask(this.user.id, date);
+        this.finishTask(this.user.id, date, this.selectedItem);
       } else {
         this.$store.dispatch("tempSignIn", (userId) => {
-          this.finishTask(userId, date);
+          this.finishTask(userId, date, this.selectedItem);
         });
       }
     },
-    finishTask(userId, date){
-      this.$store.dispatch("finishTask", { userId, date });
-      this.$store.dispatch("fetchDates", userId);
+    finishTask(userId, date, selectedItem){
+      this.$store.dispatch("finishTask", { userId, date, list: selectedItem.name });
     },
     signIn() {
       this.$store.dispatch("signIn");
@@ -108,8 +113,13 @@ export default {
       localStorage.lastFinished = date.unix();
     },
     user(user) {
-      this.$store.dispatch("fetchDates", user.id);
+      this.$store.dispatch("fetchDates", { userId: user.id, list: this.selectedItem.name });
     },
+    selectedItem() {
+      if (this.user) {
+        this.$store.dispatch("fetchDates", { userId: this.user.id, list: this.selectedItem.name });  
+      }
+    }
   },
 };
 </script>
