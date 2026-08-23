@@ -1,5 +1,7 @@
 <template>
-    <span class="day" :style="dayStyle" @click="startAnimation" />
+    <span class="day" :style="dayStyle" @click="startAnimation">
+        <span v-if="cords[1] === 0" class="day-header">{{ day.format("dd")[0] }}</span>
+    </span>
 </template>
 
 <script>

@@ -11,7 +11,7 @@
         >
           <slot :item="item" :index="index">
             <template v-if="item.name">
-              <div>{{ item.name }}</div>
+              <div>{{ item.label || item.name }}</div>
             </template>
           </slot>
         </div>

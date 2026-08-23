@@ -1,5 +1,8 @@
 <template>
   <div class="week">
+    <span v-if="firstDay" class="month" :style="firstDayStyle">{{
+      firstDay.format("MMMM")
+    }}</span>
     <day-node
       v-for="day in days"
       :done="unixDates.includes(day.unix())"
@@ -8,12 +11,17 @@
       :key="day.unix()"
       :day="day"
     />
+    <div v-if="isCurrentWeek" class="today-annotation">
+      <img :src="arrowUrl" width="51" height="19" alt="" />
+      <span class="today-label">{{ $t("today") }}</span>
+    </div>
   </div>
 </template>
 
 <script>
 import dayjs from "@/utils/dayjs";
 import dayNode from "@/components/day-node.vue";
+import arrowUrl from "@/assets/arrow.svg";
 
 export default {
   components: { dayNode },
@@ -21,6 +29,7 @@ export default {
     return {
       dayjs,
       days: [],
+      arrowUrl,
     };
   },
   props: {
@@ -53,6 +62,27 @@ export default {
     },
     unixDates() {
       return this.dates.map((d) => d.timestamp);
+    },
+    firstDay() {
+      if (this.pos === 0) {
+        return this.days[0];
+      }
+      return this.days.find((day) => day.date() === 1);
+    },
+    firstDayStyle() {
+      if (!this.firstDay) {
+        return {};
+      }
+      if (this.firstDay.month() % 2 === 0) {
+        return {
+          left: 0,
+          transform: "translateX(-100%)",
+        };
+      }
+      return {
+        right: 0,
+        transform: "translateX(100%)",
+      };
     },
   },
   mounted() {

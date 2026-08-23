@@ -1,29 +1,62 @@
 <template>
-  <div class="wrapper">
+  <nav>
+    <div class="title">
+      <span class="hue">hue</span>
+      <span>goal</span>
+      <span class="icon crown"></span>
+    </div>
+  </nav>
+  <div class="calendar">
+    <week-grid
+      v-for="(week, index) in weeks"
+      :key="week.unix()"
+      :week="week"
+      :dates="dates"
+      :pos="index"
+    />
+  </div>
+  <div class="centered">
+    <checkmark-button :done="today.isSame(lastFinished)" @click="registerTask">{{
+      $t("cta")
+    }}</checkmark-button>
+    <horizontal-pills
+      v-if="user"
+      :items="tasks"
+      @update:selectedItem="(item) => (selectedItem = item)"
+    ></horizontal-pills>
+    <div class="auth">
+      <template v-if="isLoggedIn">
+        <p>{{ $t("auth.loggedInAs") }}<br />{{ user.email }}</p>
+        <a href="#" @click.prevent="signOut">{{ $t("auth.logOut") }}</a>
+      </template>
+      <a v-else class="fake-link" @click="signIn">{{ $t("auth.logIn") }}</a>
+    </div>
+    <hr class="divider" />
     <div class="section">
-      <week-grid
-        v-for="(week, index) in weeks"
-        :key="week.unix()"
-        :week="week"
-        :dates="dates"
-        :pos="index"
-      />
+      <h2>{{ $t("marketing.whatTitle") }}</h2>
+      <p>{{ $t("marketing.whatBody") }}</p>
     </div>
     <div class="section">
-      <checkmark-button :done="today.isSame(lastFinished)" @click="registerTask"
-        >I've done todays task!</checkmark-button>
-      <horizontal-pills v-if="user" :items="tasks" @update:selectedItem="(item) => selectedItem = item"></horizontal-pills>
-      <br />
-      <template v-if="isLoggedIn">
-        <p>Logged in as:<br />{{ user.email }}</p>
-        <a href="#" @click.prevent="signOut">Log out</a>
-      </template>
-      <a v-else class="fake-link" @click="signIn"
-        >Login to sync your progress</a
-      >
+      <h2>{{ $t("marketing.howTitle") }}</h2>
+      <p>{{ $t("marketing.howBody") }}</p>
+    </div>
+    <div class="section">
+      <h2>{{ $t("marketing.colorsTitle") }}</h2>
+      <p>{{ $t("marketing.colorsBody") }}</p>
     </div>
   </div>
-  <footer>Hue Goal by William Beinö &copy; {{ dayjs().year() }}</footer>
+  <footer>
+    <a
+      href="https://github.com/xTacobaco/hue-goal"
+      target="_blank"
+      rel="noopener noreferrer"
+      >{{ $t("footer.github") }}</a
+    >
+    <span>{{ $t("footer.copyright") }} &copy; {{ dayjs().year() }}</span>
+    <a :href="$localeHref($i18n.locale === 'sv' ? 'en' : 'sv')">{{
+      $i18n.locale === "sv" ? "English" : "Svenska"
+    }}</a>
+  </footer>
 </template>
 
 <script>
@@ -35,8 +68,6 @@ import horizontalPills from "@/components/horizontal-pills.vue";
 import { useUserStore } from "@/datastores/user.js";
 import { useDatesStore } from "@/datastores/dates.js";
 
-const tasks = [{ name: "goal" }, { name: "task" }];
-
 export default {
   components: {
     weekGrid,
@@ -47,8 +78,7 @@ export default {
     return {
       dayjs,
       weeks: [],
-      tasks,
-      selectedItem: tasks[0],
+      selectedItem: { name: "goal" },
     };
   },
   computed: {
@@ -59,6 +89,12 @@ export default {
       const empty = { timestamp: 0 };
       const lastFinished = this.dates.slice(-1)[0] || empty;
       return dayjs.unix(lastFinished.timestamp);
+    },
+    tasks() {
+      return [
+        { name: "goal", label: this.$t("lists.goal") },
+        { name: "task", label: this.$t("lists.task") },
+      ];
     },
     ...mapState(useUserStore, ["user", "isLoggedIn"]),
     ...mapState(useDatesStore, ["dates"]),
