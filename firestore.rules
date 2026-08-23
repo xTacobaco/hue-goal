@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: Firebase Auth uid (anonymous or Google)
+    // Fields:
+    //   - tracks: map (required)
+    //       keys: short list names used by the app ("goal", "task")
+    //       values: lists of unix timestamps (numbers, seconds since epoch)
+    //
+    // No other collections or fields are used.
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidTrackList(list) {
+      return list is list
+        && list.size() <= 4000
+        && (list.size() == 0 || list[0] is number);
+    }
+
+    function isValidTracks(tracks) {
+      return tracks is map
+        && tracks.size() <= 20
+        && tracks.keys().hasOnly(['goal', 'task'])
+        && (!('goal' in tracks) || isValidTrackList(tracks.goal))
+        && (!('task' in tracks) || isValidTrackList(tracks.task));
+    }
+
+    function isValidUserDoc(data) {
+      return data.keys().hasOnly(['tracks'])
+        && isValidTracks(data.tracks);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserDoc(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserDoc(request.resource.data);
+      allow delete: if isOwner(userId);
+    }
+  }
+}

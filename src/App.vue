@@ -16,7 +16,7 @@
       <br />
       <template v-if="isLoggedIn">
         <p>Logged in as:<br />{{ user.email }}</p>
-        <a href="#" @click="signOut">Log out</a>
+        <a href="#" @click.prevent="signOut">Log out</a>
       </template>
       <a v-else class="fake-link" @click="signIn"
         >Login to sync your progress</a
@@ -27,16 +27,15 @@
 </template>
 
 <script>
+import { mapActions, mapState } from "pinia";
 import dayjs from "@/utils/dayjs";
-import animations from '@/utils/animations';
 import weekGrid from "@/components/week-grid.vue";
 import checkmarkButton from "@/components/checkmark-button.vue";
 import horizontalPills from "@/components/horizontal-pills.vue";
+import { useUserStore } from "@/datastores/user.js";
+import { useDatesStore } from "@/datastores/dates.js";
 
-import { auth, onAuthStateChanged, getRedirectResult } from "@/utils/auth";
-import { mapGetters } from "vuex";
-
-let tasks = [{name: 'goal'},{name: 'task'}];
+const tasks = [{ name: "goal" }, { name: "task" }];
 
 export default {
   components: {
@@ -48,32 +47,21 @@ export default {
     return {
       dayjs,
       weeks: [],
-      tasks: tasks,
+      tasks,
       selectedItem: tasks[0],
     };
-  },
-  created() {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        this.$store.dispatch("autoSignIn", user);
-      } else {
-        animations.startAtMiddle();
-      }
-    });
-    getRedirectResult(auth).catch((error) => {
-      this.$store.dispatch("handleRedirect", error);
-    });
   },
   computed: {
     today() {
       return dayjs().startOf("date");
     },
     lastFinished() {
-      let empty = { timestamp: 0 };
-      let lastFinished = this.dates.slice(-1)[0] || empty;
+      const empty = { timestamp: 0 };
+      const lastFinished = this.dates.slice(-1)[0] || empty;
       return dayjs.unix(lastFinished.timestamp);
     },
-    ...mapGetters(["user", "isLoggedIn", "dates"]),
+    ...mapState(useUserStore, ["user", "isLoggedIn"]),
+    ...mapState(useDatesStore, ["dates"]),
   },
   mounted() {
     let week = dayjs().startOf("isoWeek");
@@ -83,43 +71,34 @@ export default {
     this.weeks.reverse();
   },
   methods: {
-    registerTask() {
+    async registerTask() {
       if (this.today.isSame(this.lastFinished)) {
         return;
       }
-      
-      let date = dayjs().startOf("date");
-      if (this.user) {
-        this.finishTask(this.user.id, date, this.selectedItem);
-      } else {
-        this.$store.dispatch("tempSignIn", (userId) => {
-          this.finishTask(userId, date, this.selectedItem);
-        });
+
+      const date = dayjs().startOf("date");
+      let userId = this.user?.id;
+      if (!userId) {
+        userId = await this.tempSignIn();
       }
+      this.finishTask({ userId, date, list: this.selectedItem.name });
     },
-    finishTask(userId, date, selectedItem){
-      this.$store.dispatch("finishTask", { userId, date, list: selectedItem.name });
-    },
-    signIn() {
-      this.$store.dispatch("signIn");
-    },
-    signOut() {
-      this.$store.dispatch("signOut");
-      location.reload();
-    },
+    ...mapActions(useUserStore, ["signIn", "signOut", "tempSignIn"]),
+    ...mapActions(useDatesStore, ["finishTask", "watchUser", "setList"]),
   },
   watch: {
     lastFinished(date) {
       localStorage.lastFinished = date.unix();
     },
-    user(user) {
-      this.$store.dispatch("fetchDates", { userId: user.id, list: this.selectedItem.name });
+    user: {
+      immediate: true,
+      handler(user) {
+        this.watchUser(user?.id || null);
+      },
     },
-    selectedItem() {
-      if (this.user) {
-        this.$store.dispatch("fetchDates", { userId: this.user.id, list: this.selectedItem.name });  
-      }
-    }
+    selectedItem(item) {
+      this.setList(item?.name);
+    },
   },
 };
 </script>

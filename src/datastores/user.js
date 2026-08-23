@@ -1,63 +1,93 @@
+import { defineStore } from "pinia";
 import {
-  getAuth,
   GoogleAuthProvider,
+  linkWithPopup,
+  onIdTokenChanged,
   signInAnonymously,
-  linkWithCredential,
-  signInWithRedirect,
   signInWithCredential,
+  signInWithPopup,
+  signOut,
 } from "firebase/auth";
+import { auth, googleProvider } from "@/utils/config";
+import { mergeTracksIntoUser, readTracks } from "@/datastores/dates";
+import animations from "@/utils/animations";
 
-const auth = getAuth();
-const provider = new GoogleAuthProvider();
+let unsubAuth = null;
 
-export default {
-  state: {
+function toUser(firebaseUser) {
+  if (!firebaseUser) {
+    return null;
+  }
+  return { id: firebaseUser.uid, email: firebaseUser.email };
+}
+
+const ignoredAuthCodes = new Set([
+  "auth/popup-closed-by-user",
+  "auth/cancelled-popup-request",
+]);
+
+export const useUserStore = defineStore("user", {
+  state: () => ({
     user: null,
-  },
-  mutations: {
-    setUser(state, data) {
-      state.user = data;
-    },
+  }),
+  getters: {
+    isLoggedIn: (state) => Boolean(state.user && state.user.email),
   },
   actions: {
-    signIn({ commit }) {
-      signInWithRedirect(auth, provider).then((user) => {
-        const credential = GoogleAuthProvider.credential(
-          user.getAuthResponse().id_token
-        );
-        linkWithCredential(auth.currentUser, credential);
-        commit("setUser", { id: user.uid, email: user.email });
+    listen() {
+      if (unsubAuth) {
+        return;
+      }
+      unsubAuth = onIdTokenChanged(auth, (firebaseUser) => {
+        this.user = toUser(firebaseUser);
+        if (!firebaseUser) {
+          animations.startAtMiddle();
+        }
       });
     },
-    tempSignIn({ commit }, callback) {
-      signInAnonymously(auth).then((credential) => {
-        let user = credential.user;
-        commit("setUser", { id: user.uid, email: user.email });
-        callback(user.uid)
-      });
+    async tempSignIn() {
+      const { user } = await signInAnonymously(auth);
+      return user.uid;
     },
-    autoSignIn({ commit }, user) {
-      commit("setUser", { id: user.uid, email: user.email });
-    },
-    handleRedirect({ commit }, error) {
-      const credential = GoogleAuthProvider.credentialFromError(error);
-      if (credential) {
-        signInWithCredential(auth, credential).then((user) => {
-          commit("setUser", { id: user.uid, email: user.email });
-        });
+    async signIn() {
+      try {
+        if (auth.currentUser?.isAnonymous) {
+          await linkWithPopup(auth.currentUser, googleProvider);
+        } else {
+          await signInWithPopup(auth, googleProvider);
+        }
+      } catch (error) {
+        if (ignoredAuthCodes.has(error.code)) {
+          return;
+        }
+        if (
+          error.code === "auth/credential-already-in-use" ||
+          error.code === "auth/email-already-in-use"
+        ) {
+          await this.signInExistingGoogle(error);
+          return;
+        }
+        throw error;
       }
     },
-    signOut({ commit }) {
-      auth.signOut();
-      commit("setUser", null);
+    async signInExistingGoogle(error) {
+      const credential = GoogleAuthProvider.credentialFromError(error);
+      if (!credential) {
+        throw error;
+      }
+
+      const anonUid = auth.currentUser?.isAnonymous ? auth.currentUser.uid : null;
+      const prevTracks = anonUid ? await readTracks(anonUid) : {};
+
+      await signInWithCredential(auth, credential);
+
+      const nextUid = auth.currentUser?.uid;
+      if (anonUid && nextUid && anonUid !== nextUid) {
+        await mergeTracksIntoUser(nextUid, prevTracks);
+      }
+    },
+    async signOut() {
+      await signOut(auth);
     },
   },
-  getters: {
-    user(state) {
-      return state.user;
-    },
-    isLoggedIn(state) {
-      return state.user && state.user.email;
-    },
-  },
-};
+});

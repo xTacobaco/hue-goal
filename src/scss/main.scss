@@ -1,7 +1,8 @@
-@use 'abstracts/_colors.scss';
-@use 'abstracts/_fonts.scss';
-
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+@use 'abstracts/colors';
+@use 'abstracts/fonts';
+@use 'components/buttons';
+@use 'components/checkmark-button';
+@use 'components/week-grid';
 
 * {
     font-family: 'Roboto', sans-serif;
@@ -47,7 +48,3 @@ footer {
     padding: 15px 0;
     color: #999;
 }
-
-@import 'components/buttons.scss';
-@import 'components/checkmark-button.scss';
-@import 'components/week-grid.scss';

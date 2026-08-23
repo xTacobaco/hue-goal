@@ -1,22 +1,19 @@
 import { createApp } from "vue";
+import { createPinia } from "pinia";
 
 import "@/utils/config";
 import "@/scss/main.scss";
 
 import App from "@/App.vue";
+import emitter from "@/utils/eventbus";
+import { useUserStore } from "@/datastores/user.js";
+
 const app = createApp(App);
+const pinia = createPinia();
 
-import emitter from '@/utils/eventbus';
 app.config.globalProperties.emitter = emitter;
+app.use(pinia);
 
-import { createStore } from "vuex";
-import user from "@/datastores/user.js";
-import dates from "@/datastores/dates.js";
-const store = createStore({
-  modules: {
-    user,
-    dates,
-  },
-});
-app.use(store);
+useUserStore().listen();
+
 app.mount("#app");
