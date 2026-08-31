@@ -64,7 +64,7 @@
           v-else
           type="button"
           class="pill-add"
-          :disabled="tasks.length >= 20"
+          :disabled="tasks.length >= MAX_LISTS"
           :title="$t('lists.add')"
           :aria-label="$t('lists.add')"
           @click="startAdd"
@@ -115,7 +115,7 @@ import weekGrid from "@/components/week-grid.vue";
 import checkmarkButton from "@/components/checkmark-button.vue";
 import horizontalPills from "@/components/horizontal-pills.vue";
 import { useUserStore } from "@/datastores/user.js";
-import { useDatesStore } from "@/datastores/dates.js";
+import { MAX_LISTS, useDatesStore } from "@/datastores/dates.js";
 
 export default {
   components: {
@@ -130,6 +130,7 @@ export default {
       selectedItem: { name: "goal" },
       addingList: false,
       newListLabel: "",
+      MAX_LISTS,
     };
   },
   computed: {
@@ -137,9 +138,9 @@ export default {
       return dayjs().startOf("date");
     },
     lastFinished() {
-      const empty = { timestamp: 0 };
-      const lastFinished = this.dates.slice(-1)[0] || empty;
-      return dayjs.unix(lastFinished.timestamp);
+      const timestamps = this.dates.map((item) => item.timestamp);
+      const latest = timestamps.length ? Math.max(...timestamps) : 0;
+      return dayjs.unix(latest);
     },
     tasks() {
       return this.activeLists.map((list) => this.toTaskItem(list));
@@ -169,7 +170,7 @@ export default {
       return this.tempSignIn();
     },
     startAdd() {
-      if (this.tasks.length >= 20) {
+      if (this.tasks.length >= MAX_LISTS) {
         return;
       }
       this.addingList = true;
@@ -215,13 +216,21 @@ export default {
       }
     },
     async registerTask() {
-      if (this.today.isSame(this.lastFinished)) {
+      if (this.today.isSame(this.lastFinished, "day")) {
         return;
       }
 
       const date = dayjs().startOf("date");
       const userId = await this.ensureUserId();
-      this.finishTask({ userId, date, list: this.selectedItem.name });
+      try {
+        await this.finishTask({
+          userId,
+          date,
+          list: this.selectedItem.name,
+        });
+      } catch (error) {
+        console.error("Failed to save today's task", error);
+      }
     },
     ...mapActions(useUserStore, ["signIn", "signOut", "tempSignIn"]),
     ...mapActions(useDatesStore, [

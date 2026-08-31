@@ -14,8 +14,7 @@ import animations from "@/utils/animations";
 let unsubDates = null;
 
 const LABEL_MAX = 20;
-const MAX_ACTIVE_LISTS = 20;
-const MAX_LISTS = 50;
+export const MAX_LISTS = 10;
 const LIST_ID_RE = /^[a-zA-Z0-9_]+$/;
 
 export function defaultLists() {
@@ -62,6 +61,24 @@ function tracksFromSnap(snap) {
 
 function listsFromSnap(snap) {
   return listsFromData(snap.data());
+}
+
+function serializeLists(lists) {
+  const normalized = (lists || []).map((list) => ({
+    id: String(list.id),
+    label: String(list.label || list.id).slice(0, LABEL_MAX),
+    createdAt: Number(list.createdAt) || 0,
+    deletedAt: list.deletedAt == null ? null : Number(list.deletedAt),
+  }));
+  if (normalized.length <= MAX_LISTS) {
+    return normalized;
+  }
+  const active = normalized.filter((list) => list.deletedAt == null);
+  const deleted = normalized
+    .filter((list) => list.deletedAt != null)
+    .sort((a, b) => a.deletedAt - b.deletedAt);
+  const keepDeleted = Math.max(0, MAX_LISTS - active.length);
+  return [...active, ...deleted.slice(deleted.length - keepDeleted)];
 }
 
 function startOfDayUnix(unix) {
@@ -148,7 +165,7 @@ export async function mergeTracksIntoUser(userId, extraTracks, extraLists) {
 
   await setDoc(ref, {
     tracks: merged,
-    lists: mergeListsById(currentLists, incomingLists),
+    lists: serializeLists(mergeListsById(currentLists, incomingLists)),
   });
 }
 
@@ -160,7 +177,9 @@ export const useDatesStore = defineStore("dates", {
   }),
   getters: {
     dates: (state) =>
-      (state.tracks[state.list] || []).map((timestamp) => ({ timestamp })),
+      [...(state.tracks[state.list] || [])]
+        .sort((a, b) => a - b)
+        .map((timestamp) => ({ timestamp })),
     activeLists: (state) =>
       state.lists.filter((list) => list.deletedAt == null),
     allDoneUnix: (state) => {
@@ -228,12 +247,13 @@ export const useDatesStore = defineStore("dates", {
     },
     async persistLists(userId, lists) {
       const ref = doc(db, "users", userId);
+      const payload = serializeLists(lists);
       const document = await getDoc(ref);
       if (document.exists()) {
-        await updateDoc(ref, { lists });
+        await updateDoc(ref, { lists: payload });
       } else {
         await setDoc(ref, {
-          lists,
+          lists: payload,
           tracks: this.tracks || {},
         });
       }
@@ -249,7 +269,7 @@ export const useDatesStore = defineStore("dates", {
       }
 
       const active = this.lists.filter((list) => list.deletedAt == null);
-      if (active.length >= MAX_ACTIVE_LISTS || this.lists.length >= MAX_LISTS) {
+      if (active.length >= MAX_LISTS) {
         return null;
       }
 
@@ -319,9 +339,11 @@ export const useDatesStore = defineStore("dates", {
       this.list = listName;
       const ref = doc(db, "users", userId);
       const document = await getDoc(ref);
-      const lists = this.lists.length
-        ? this.lists
-        : synthesizeLists({ [listName]: [date.unix()] });
+      const lists = serializeLists(
+        this.lists.length
+          ? this.lists
+          : synthesizeLists({ [listName]: [date.unix()] }),
+      );
 
       if (document.exists()) {
         const updates = {
