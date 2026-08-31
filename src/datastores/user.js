@@ -9,7 +9,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/utils/config";
-import { mergeTracksIntoUser, readTracks } from "@/datastores/dates";
+import { mergeTracksIntoUser, readUserProgress } from "@/datastores/dates";
 import animations from "@/utils/animations";
 
 let unsubAuth = null;
@@ -77,13 +77,15 @@ export const useUserStore = defineStore("user", {
       }
 
       const anonUid = auth.currentUser?.isAnonymous ? auth.currentUser.uid : null;
-      const prevTracks = anonUid ? await readTracks(anonUid) : {};
+      const prev = anonUid
+        ? await readUserProgress(anonUid)
+        : { tracks: {}, lists: [] };
 
       await signInWithCredential(auth, credential);
 
       const nextUid = auth.currentUser?.uid;
       if (anonUid && nextUid && anonUid !== nextUid) {
-        await mergeTracksIntoUser(nextUid, prevTracks);
+        await mergeTracksIntoUser(nextUid, prev.tracks, prev.lists);
       }
     },
     async signOut() {

@@ -6,6 +6,7 @@
     <day-node
       v-for="day in days"
       :done="unixDates.includes(day.unix())"
+      :all-done="isAllDone(day)"
       :cords="[day.isoWeekday() - 1, pos]"
       :weekdays="weekdays"
       :key="day.unix()"
@@ -48,6 +49,10 @@ export default {
       required: true,
       default: 0,
     },
+    allDoneUnix: {
+      type: Object,
+      default: () => new Set(),
+    },
   },
   computed: {
     isCurrentWeek() {
@@ -83,6 +88,11 @@ export default {
         right: 0,
         transform: "translateX(100%)",
       };
+    },
+  },
+  methods: {
+    isAllDone(day) {
+      return Boolean(this.allDoneUnix?.has?.(day.unix()));
     },
   },
   mounted() {

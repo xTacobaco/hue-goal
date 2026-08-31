@@ -1,5 +1,10 @@
 <template>
-    <span class="day" :style="dayStyle" @click="startAnimation">
+    <span
+        class="day"
+        :class="{ 'all-done': allDone, 'is-active': active }"
+        :style="dayStyle"
+        @click="startAnimation"
+    >
         <span v-if="cords[1] === 0" class="day-header">{{ day.format("dd")[0] }}</span>
     </span>
 </template>
@@ -36,6 +41,11 @@ export default {
             required: false,
             default: false,
         },
+        allDone: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
         cords: {
             type: Array,
             required: true,
@@ -56,10 +66,13 @@ export default {
             let border_color = this.active
                 ? `hsl(${this.hue}, 70%, ${this.light - 1}%)`
                 : `#202020`;
-            return {
+            const style = {
                 background: color,
-                borderColor: border_color,
             };
+            if (!(this.allDone && this.active)) {
+                style.borderColor = border_color;
+            }
+            return style;
         },
     },
     created() {

@@ -10,10 +10,15 @@ service cloud.firestore {
     // Document ID: Firebase Auth uid (anonymous or Google)
     // Fields:
     //   - tracks: map (required)
-    //       keys: short list names used by the app ("goal", "task")
+    //       keys: list ids ([A-Za-z0-9_]+, 1–64 chars)
     //       values: lists of unix timestamps (numbers, seconds since epoch)
+    //       size ≤ 50 (soft-deleted lists keep their track arrays)
+    //   - lists: list of maps (optional on legacy docs; required on new writes)
+    //       { id, label, createdAt, deletedAt }
+    //       size ≤ 50
     //
-    // No other collections or fields are used.
+    // Firestore rules cannot iterate maps/lists, so entries are checked
+    // by index (0–49) with short-circuiting size guards.
     // ===============================================================
 
     function isAuthenticated() {
@@ -30,17 +35,190 @@ service cloud.firestore {
         && (list.size() == 0 || list[0] is number);
     }
 
+    function isSafeId(id) {
+      return id is string
+        && id.size() >= 1
+        && id.size() <= 64
+        && id.matches('^[A-Za-z0-9_]+$');
+    }
+
+    function optionalTrack(tracks, i) {
+      return tracks.size() <= i
+        || (isSafeId(tracks.keys()[i])
+          && isValidTrackList(tracks[tracks.keys()[i]]));
+    }
+
+    function isValidListEntry(entry) {
+      return entry is map
+        && entry.keys().hasOnly(['id', 'label', 'createdAt', 'deletedAt'])
+        && isSafeId(entry.id)
+        && entry.label is string
+        && entry.label.size() >= 1
+        && entry.label.size() <= 20;
+        && entry.createdAt is number
+        && (entry.deletedAt == null || entry.deletedAt is number);
+    }
+
+    function optionalListEntry(lists, i) {
+      return lists.size() <= i || isValidListEntry(lists[i]);
+    }
+
+    function tracks0to9(tracks) {
+      return optionalTrack(tracks, 0)
+      && optionalTrack(tracks, 1)
+      && optionalTrack(tracks, 2)
+      && optionalTrack(tracks, 3)
+      && optionalTrack(tracks, 4)
+      && optionalTrack(tracks, 5)
+      && optionalTrack(tracks, 6)
+      && optionalTrack(tracks, 7)
+      && optionalTrack(tracks, 8)
+      && optionalTrack(tracks, 9);
+    }
+
+    function lists0to9(lists) {
+      return optionalListEntry(lists, 0)
+      && optionalListEntry(lists, 1)
+      && optionalListEntry(lists, 2)
+      && optionalListEntry(lists, 3)
+      && optionalListEntry(lists, 4)
+      && optionalListEntry(lists, 5)
+      && optionalListEntry(lists, 6)
+      && optionalListEntry(lists, 7)
+      && optionalListEntry(lists, 8)
+      && optionalListEntry(lists, 9);
+    }
+
+    function tracks10to19(tracks) {
+      return optionalTrack(tracks, 10)
+      && optionalTrack(tracks, 11)
+      && optionalTrack(tracks, 12)
+      && optionalTrack(tracks, 13)
+      && optionalTrack(tracks, 14)
+      && optionalTrack(tracks, 15)
+      && optionalTrack(tracks, 16)
+      && optionalTrack(tracks, 17)
+      && optionalTrack(tracks, 18)
+      && optionalTrack(tracks, 19);
+    }
+
+    function lists10to19(lists) {
+      return optionalListEntry(lists, 10)
+      && optionalListEntry(lists, 11)
+      && optionalListEntry(lists, 12)
+      && optionalListEntry(lists, 13)
+      && optionalListEntry(lists, 14)
+      && optionalListEntry(lists, 15)
+      && optionalListEntry(lists, 16)
+      && optionalListEntry(lists, 17)
+      && optionalListEntry(lists, 18)
+      && optionalListEntry(lists, 19);
+    }
+
+    function tracks20to29(tracks) {
+      return optionalTrack(tracks, 20)
+      && optionalTrack(tracks, 21)
+      && optionalTrack(tracks, 22)
+      && optionalTrack(tracks, 23)
+      && optionalTrack(tracks, 24)
+      && optionalTrack(tracks, 25)
+      && optionalTrack(tracks, 26)
+      && optionalTrack(tracks, 27)
+      && optionalTrack(tracks, 28)
+      && optionalTrack(tracks, 29);
+    }
+
+    function lists20to29(lists) {
+      return optionalListEntry(lists, 20)
+      && optionalListEntry(lists, 21)
+      && optionalListEntry(lists, 22)
+      && optionalListEntry(lists, 23)
+      && optionalListEntry(lists, 24)
+      && optionalListEntry(lists, 25)
+      && optionalListEntry(lists, 26)
+      && optionalListEntry(lists, 27)
+      && optionalListEntry(lists, 28)
+      && optionalListEntry(lists, 29);
+    }
+
+    function tracks30to39(tracks) {
+      return optionalTrack(tracks, 30)
+      && optionalTrack(tracks, 31)
+      && optionalTrack(tracks, 32)
+      && optionalTrack(tracks, 33)
+      && optionalTrack(tracks, 34)
+      && optionalTrack(tracks, 35)
+      && optionalTrack(tracks, 36)
+      && optionalTrack(tracks, 37)
+      && optionalTrack(tracks, 38)
+      && optionalTrack(tracks, 39);
+    }
+
+    function lists30to39(lists) {
+      return optionalListEntry(lists, 30)
+      && optionalListEntry(lists, 31)
+      && optionalListEntry(lists, 32)
+      && optionalListEntry(lists, 33)
+      && optionalListEntry(lists, 34)
+      && optionalListEntry(lists, 35)
+      && optionalListEntry(lists, 36)
+      && optionalListEntry(lists, 37)
+      && optionalListEntry(lists, 38)
+      && optionalListEntry(lists, 39);
+    }
+
+    function tracks40to49(tracks) {
+      return optionalTrack(tracks, 40)
+      && optionalTrack(tracks, 41)
+      && optionalTrack(tracks, 42)
+      && optionalTrack(tracks, 43)
+      && optionalTrack(tracks, 44)
+      && optionalTrack(tracks, 45)
+      && optionalTrack(tracks, 46)
+      && optionalTrack(tracks, 47)
+      && optionalTrack(tracks, 48)
+      && optionalTrack(tracks, 49);
+    }
+
+    function lists40to49(lists) {
+      return optionalListEntry(lists, 40)
+      && optionalListEntry(lists, 41)
+      && optionalListEntry(lists, 42)
+      && optionalListEntry(lists, 43)
+      && optionalListEntry(lists, 44)
+      && optionalListEntry(lists, 45)
+      && optionalListEntry(lists, 46)
+      && optionalListEntry(lists, 47)
+      && optionalListEntry(lists, 48)
+      && optionalListEntry(lists, 49);
+    }
+
     function isValidTracks(tracks) {
       return tracks is map
-        && tracks.size() <= 20
-        && tracks.keys().hasOnly(['goal', 'task'])
-        && (!('goal' in tracks) || isValidTrackList(tracks.goal))
-        && (!('task' in tracks) || isValidTrackList(tracks.task));
+        && tracks.size() <= 50
+        && tracks0to9(tracks)
+        && tracks10to19(tracks)
+        && tracks20to29(tracks)
+        && tracks30to39(tracks)
+        && tracks40to49(tracks);
+    }
+
+    function isValidLists(lists) {
+      return lists is list
+        && lists.size() <= 50
+        && lists0to9(lists)
+        && lists10to19(lists)
+        && lists20to29(lists)
+        && lists30to39(lists)
+        && lists40to49(lists);
     }
 
     function isValidUserDoc(data) {
-      return data.keys().hasOnly(['tracks'])
-        && isValidTracks(data.tracks);
+      return (data.keys().hasOnly(['tracks', 'lists'])
+          && isValidTracks(data.tracks)
+          && isValidLists(data.lists))
+        || (data.keys().hasOnly(['tracks'])
+          && isValidTracks(data.tracks));
     }
 
     match /users/{userId} {

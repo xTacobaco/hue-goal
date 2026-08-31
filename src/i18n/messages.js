@@ -8,6 +8,10 @@ export default {
     lists: {
       goal: "Goal",
       task: "Task",
+      addPlaceholder: "New task",
+      add: "Add task",
+      remove: "Remove task",
+      lastList: "Keep at least one task",
     },
     auth: {
       loggedInAs: "Logged in as:",
@@ -39,6 +43,10 @@ export default {
     lists: {
       goal: "Mål",
       task: "Uppgift",
+      addPlaceholder: "Ny uppgift",
+      add: "Lägg till uppgift",
+      remove: "Ta bort uppgift",
+      lastList: "Behåll minst en uppgift",
     },
     auth: {
       loggedInAs: "Inloggad som:",

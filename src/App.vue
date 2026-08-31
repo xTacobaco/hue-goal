@@ -12,6 +12,7 @@
       :key="week.unix()"
       :week="week"
       :dates="dates"
+      :all-done-unix="allDoneUnix"
       :pos="index"
     />
   </div>
@@ -20,10 +21,58 @@
       $t("cta")
     }}</checkmark-button>
     <horizontal-pills
-      v-if="user"
       :items="tasks"
+      :selected-item="selectedItem"
       @update:selectedItem="(item) => (selectedItem = item)"
-    ></horizontal-pills>
+    >
+      <template #default="{ item }">
+        <span>{{ item.label || item.name }}</span>
+        <button
+          v-if="item.name === selectedItem.name"
+          type="button"
+          class="pill-remove"
+          :disabled="tasks.length <= 1"
+          :title="
+            tasks.length <= 1 ? $t('lists.lastList') : $t('lists.remove')
+          "
+          :aria-label="
+            tasks.length <= 1 ? $t('lists.lastList') : $t('lists.remove')
+          "
+          @click.stop="removeTask(item)"
+        >
+          ×
+        </button>
+      </template>
+      <template #after>
+        <form
+          v-if="addingList"
+          class="pill-add-form"
+          @submit.prevent="commitAdd"
+        >
+          <input
+            ref="addInput"
+            v-model="newListLabel"
+            class="pill-add-input"
+            type="text"
+            maxlength="20"
+            :placeholder="$t('lists.addPlaceholder')"
+            :aria-label="$t('lists.add')"
+            @keydown.escape.prevent="cancelAdd"
+          />
+        </form>
+        <button
+          v-else
+          type="button"
+          class="pill-add"
+          :disabled="tasks.length >= 20"
+          :title="$t('lists.add')"
+          :aria-label="$t('lists.add')"
+          @click="startAdd"
+        >
+          +
+        </button>
+      </template>
+    </horizontal-pills>
     <div class="auth">
       <template v-if="isLoggedIn">
         <p>{{ $t("auth.loggedInAs") }}<br />{{ user.email }}</p>
@@ -79,6 +128,8 @@ export default {
       dayjs,
       weeks: [],
       selectedItem: { name: "goal" },
+      addingList: false,
+      newListLabel: "",
     };
   },
   computed: {
@@ -91,13 +142,10 @@ export default {
       return dayjs.unix(lastFinished.timestamp);
     },
     tasks() {
-      return [
-        { name: "goal", label: this.$t("lists.goal") },
-        { name: "task", label: this.$t("lists.task") },
-      ];
+      return this.activeLists.map((list) => this.toTaskItem(list));
     },
     ...mapState(useUserStore, ["user", "isLoggedIn"]),
-    ...mapState(useDatesStore, ["dates"]),
+    ...mapState(useDatesStore, ["dates", "list", "activeLists", "allDoneUnix"]),
   },
   mounted() {
     let week = dayjs().startOf("isoWeek");
@@ -107,20 +155,82 @@ export default {
     this.weeks.reverse();
   },
   methods: {
+    toTaskItem(list) {
+      const label =
+        list.id === "goal" || list.id === "task"
+          ? this.$t(`lists.${list.id}`)
+          : list.label;
+      return { name: list.id, id: list.id, label };
+    },
+    async ensureUserId() {
+      if (this.user?.id) {
+        return this.user.id;
+      }
+      return this.tempSignIn();
+    },
+    startAdd() {
+      if (this.tasks.length >= 20) {
+        return;
+      }
+      this.addingList = true;
+      this.newListLabel = "";
+      this.$nextTick(() => {
+        this.$refs.addInput?.focus();
+      });
+    },
+    cancelAdd() {
+      this.addingList = false;
+      this.newListLabel = "";
+    },
+    async commitAdd() {
+      const label = this.newListLabel.trim();
+      if (!label) {
+        return;
+      }
+      try {
+        const userId = await this.ensureUserId();
+        const list = await this.addList({ userId, label });
+        if (list) {
+          this.selectedItem = this.toTaskItem(list);
+          this.cancelAdd();
+        }
+      } catch {
+        // Keep the add field open so the label is not lost if the write fails.
+      }
+    },
+    async removeTask(item) {
+      if (this.tasks.length <= 1) {
+        return;
+      }
+      try {
+        const userId = await this.ensureUserId();
+        await this.removeList({ userId, id: item.name });
+        const next =
+          this.tasks.find((task) => task.name === this.list) || this.tasks[0];
+        if (next) {
+          this.selectedItem = next;
+        }
+      } catch {
+        // Leave the current selection; store rolls lists back on failure.
+      }
+    },
     async registerTask() {
       if (this.today.isSame(this.lastFinished)) {
         return;
       }
 
       const date = dayjs().startOf("date");
-      let userId = this.user?.id;
-      if (!userId) {
-        userId = await this.tempSignIn();
-      }
+      const userId = await this.ensureUserId();
       this.finishTask({ userId, date, list: this.selectedItem.name });
     },
     ...mapActions(useUserStore, ["signIn", "signOut", "tempSignIn"]),
-    ...mapActions(useDatesStore, ["finishTask", "watchUser", "setList"]),
+    ...mapActions(useDatesStore, [
+      "finishTask",
+      "watchUser",
+      "setList",
+      "addList",
+      "removeList",
+    ]),
   },
   watch: {
     lastFinished(date) {
@@ -134,6 +244,20 @@ export default {
     },
     selectedItem(item) {
       this.setList(item?.name);
+    },
+    list(id) {
+      const item = this.tasks.find((task) => task.name === id);
+      if (item && item.name !== this.selectedItem?.name) {
+        this.selectedItem = item;
+      }
+    },
+    tasks(items) {
+      const still = items.find(
+        (task) => task.name === this.selectedItem?.name,
+      );
+      if (!still && items[0]) {
+        this.selectedItem = items[0];
+      }
     },
   },
 };

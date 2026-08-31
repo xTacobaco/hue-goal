@@ -1,5 +1,11 @@
 @use "../abstracts/colors";
 
+@property --holo-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+
 .week {
     display: flex;
     position: relative;
@@ -12,6 +18,67 @@
     background-color: colors.$day-color;
     border: colors.$day-border-color 1px solid;
     position: relative;
+}
+
+.day.all-done.is-active {
+    border-color: transparent;
+}
+
+.day.all-done::after {
+    content: "";
+    position: absolute;
+    // Cover the 1px border box so the ring replaces the edge, not an inner inset.
+    inset: -1px;
+    padding: 1px;
+    pointer-events: none;
+    opacity: 0;
+    background: conic-gradient(
+        from var(--holo-angle),
+        hsl(0, 90%, 65%),
+        hsl(60, 90%, 60%),
+        hsl(120, 80%, 55%),
+        hsl(180, 90%, 55%),
+        hsl(240, 85%, 65%),
+        hsl(300, 85%, 65%),
+        hsl(0, 90%, 65%)
+    );
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    transition: opacity 0.4s ease-out;
+}
+
+.day.all-done.is-active::after {
+    opacity: 1;
+    animation: holo-spin 3s linear infinite;
+}
+
+@starting-style {
+    .day.all-done.is-active::after {
+        opacity: 0;
+    }
+}
+
+@keyframes holo-spin {
+    to {
+        --holo-angle: 360deg;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .day.all-done::after {
+        transition: none;
+    }
+
+    .day.all-done.is-active::after {
+        animation: none;
+        --holo-angle: 0deg;
+    }
 }
 
 .month {
