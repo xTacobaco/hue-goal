@@ -54,7 +54,7 @@ service cloud.firestore {
         && isSafeId(entry.id)
         && entry.label is string
         && entry.label.size() >= 1
-        && entry.label.size() <= 20;
+        && entry.label.size() <= 20
         && entry.createdAt is number
         && (entry.deletedAt == null || entry.deletedAt is number);
     }
