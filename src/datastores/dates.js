@@ -182,6 +182,16 @@ export const useDatesStore = defineStore("dates", {
         .map((timestamp) => ({ timestamp })),
     activeLists: (state) =>
       state.lists.filter((list) => list.deletedAt == null),
+    doneTodayIds: (state) => {
+      const todayUnix = dayjs().startOf("date").unix();
+      const ids = new Set();
+      for (const [id, stamps] of Object.entries(state.tracks || {})) {
+        if ((stamps || []).includes(todayUnix)) {
+          ids.add(id);
+        }
+      }
+      return ids;
+    },
     allDoneUnix: (state) => {
       const trackSets = {};
       const allTs = new Set();
@@ -337,30 +347,45 @@ export const useDatesStore = defineStore("dates", {
 
       const listName = list || "goal";
       this.list = listName;
+      const stamp = date.unix();
+      const previousTracks = this.tracks;
+      const current = this.tracks[listName] || [];
+      if (!current.includes(stamp)) {
+        this.tracks = {
+          ...this.tracks,
+          [listName]: [...current, stamp],
+        };
+      }
+
       const ref = doc(db, "users", userId);
-      const document = await getDoc(ref);
       const lists = serializeLists(
         this.lists.length
           ? this.lists
-          : synthesizeLists({ [listName]: [date.unix()] }),
+          : synthesizeLists({ [listName]: [stamp] }),
       );
 
-      if (document.exists()) {
-        const updates = {
-          [`tracks.${listName}`]: arrayUnion(date.unix()),
-        };
-        const remoteLists = document.data()?.lists;
-        if (!Array.isArray(remoteLists) || remoteLists.length === 0) {
-          updates.lists = lists;
+      try {
+        const document = await getDoc(ref);
+        if (document.exists()) {
+          const updates = {
+            [`tracks.${listName}`]: arrayUnion(stamp),
+          };
+          const remoteLists = document.data()?.lists;
+          if (!Array.isArray(remoteLists) || remoteLists.length === 0) {
+            updates.lists = lists;
+          }
+          await updateDoc(ref, updates);
+        } else {
+          await setDoc(ref, {
+            lists,
+            tracks: {
+              [listName]: [stamp],
+            },
+          });
         }
-        await updateDoc(ref, updates);
-      } else {
-        await setDoc(ref, {
-          lists,
-          tracks: {
-            [listName]: [date.unix()],
-          },
-        });
+      } catch (error) {
+        this.tracks = previousTracks;
+        throw error;
       }
     },
   },

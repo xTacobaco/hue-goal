@@ -6,7 +6,10 @@
         :key="item.name"
         @click.stop.prevent="selectItem(index)"
         class="gmf-horizontal-pills-item"
-        :class="{ 'gmf-active': index === selectedIndex }"
+        :class="{
+          'gmf-active': index === selectedIndex,
+          'gmf-done': item.done,
+        }"
         :ref="el => setItemRef(el, item)"
       >
         <slot :item="item" :index="index">
@@ -59,11 +62,21 @@
   border-radius: 6px;
   font-size: 14px;
   position: relative;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.gmf-horizontal-pills-item.gmf-done {
+  color: #7229d4;
 }
 
 .gmf-horizontal-pills-item.gmf-active {
   background-color: white;
   color: black;
+}
+
+.gmf-horizontal-pills-item.gmf-active.gmf-done {
+  background-color: #7229d4;
+  color: white;
 }
 
 .pill-remove {

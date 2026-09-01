@@ -146,7 +146,13 @@ export default {
       return this.activeLists.map((list) => this.toTaskItem(list));
     },
     ...mapState(useUserStore, ["user", "isLoggedIn"]),
-    ...mapState(useDatesStore, ["dates", "list", "activeLists", "allDoneUnix"]),
+    ...mapState(useDatesStore, [
+      "dates",
+      "list",
+      "activeLists",
+      "allDoneUnix",
+      "doneTodayIds",
+    ]),
   },
   mounted() {
     let week = dayjs().startOf("isoWeek");
@@ -161,7 +167,12 @@ export default {
         list.id === "goal" || list.id === "task"
           ? this.$t(`lists.${list.id}`)
           : list.label;
-      return { name: list.id, id: list.id, label };
+      return {
+        name: list.id,
+        id: list.id,
+        label,
+        done: this.doneTodayIds.has(list.id),
+      };
     },
     async ensureUserId() {
       if (this.user?.id) {
