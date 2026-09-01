@@ -48,6 +48,7 @@ main {
 .title {
     font-size: 27px;
     font-weight: bold;
+    line-height: 1;
     gap: 2px;
     color: colors.$text;
     display: flex;
@@ -56,9 +57,7 @@ main {
 
 .hue {
     color: colors.$brand;
-    display: inline-block;
-    height: 28px;
-    border-bottom: 3px solid colors.$brand;
+    box-shadow: 0 3px 0 0 colors.$brand;
 }
 
 .icon {
