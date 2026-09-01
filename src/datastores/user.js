@@ -29,6 +29,7 @@ const ignoredAuthCodes = new Set([
 export const useUserStore = defineStore("user", {
   state: () => ({
     user: null,
+    authReady: false,
   }),
   getters: {
     isLoggedIn: (state) => Boolean(state.user && state.user.email),
@@ -40,6 +41,7 @@ export const useUserStore = defineStore("user", {
       }
       unsubAuth = onIdTokenChanged(auth, (firebaseUser) => {
         this.user = toUser(firebaseUser);
+        this.authReady = true;
         if (!firebaseUser) {
           animations.startAtMiddle();
         }

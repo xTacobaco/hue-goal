@@ -174,6 +174,7 @@ export const useDatesStore = defineStore("dates", {
     tracks: {},
     lists: defaultLists(),
     list: "goal",
+    progressReady: false,
   }),
   getters: {
     dates: (state) =>
@@ -235,24 +236,27 @@ export const useDatesStore = defineStore("dates", {
         this.tracks = {};
         this.lists = defaultLists();
         this.list = "goal";
+        this.progressReady = true;
         return;
       }
 
       unsubDates = onSnapshot(
         doc(db, "users", userId),
         (snap) => {
-          if (!snap.exists()) {
-            return;
+          if (snap.exists()) {
+            this.tracks = tracksFromSnap(snap);
+            this.lists = listsFromSnap(snap);
+            const active = this.lists.filter((list) => list.deletedAt == null);
+            if (!active.some((list) => list.id === this.list) && active[0]) {
+              this.list = active[0].id;
+            }
+            animations.startAtCurrentDay();
           }
-          this.tracks = tracksFromSnap(snap);
-          this.lists = listsFromSnap(snap);
-          const active = this.lists.filter((list) => list.deletedAt == null);
-          if (!active.some((list) => list.id === this.list) && active[0]) {
-            this.list = active[0].id;
-          }
-          animations.startAtCurrentDay();
+          this.progressReady = true;
         },
-        () => {},
+        () => {
+          this.progressReady = true;
+        },
       );
     },
     async persistLists(userId, lists) {

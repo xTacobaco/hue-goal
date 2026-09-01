@@ -7,93 +7,136 @@
     </div>
   </nav>
   <main>
-    <div class="calendar">
-    <week-grid
-      v-for="(week, index) in weeks"
-      :key="week.unix()"
-      :week="week"
-      :dates="dates"
-      :all-done-unix="allDoneUnix"
-      :pos="index"
-    />
-  </div>
-  <div class="centered">
-    <checkmark-button :done="today.isSame(lastFinished)" @click="registerTask">{{
-      $t("cta")
-    }}</checkmark-button>
-    <horizontal-pills
-      :items="tasks"
-      :selected-item="selectedItem"
-      @update:selectedItem="(item) => (selectedItem = item)"
-    >
-      <template #default="{ item }">
-        <span>{{ item.label || item.name }}</span>
-        <button
-          v-if="item.name === selectedItem.name"
-          type="button"
-          class="pill-remove"
-          :disabled="tasks.length <= 1"
-          :title="
-            tasks.length <= 1 ? $t('lists.lastList') : $t('lists.remove')
-          "
-          :aria-label="
-            tasks.length <= 1 ? $t('lists.lastList') : $t('lists.remove')
-          "
-          @click.stop="removeTask(item)"
-        >
-          ×
-        </button>
-      </template>
-      <template #after>
-        <form
-          v-if="addingList"
-          class="pill-add-form"
-          @submit.prevent="commitAdd"
-        >
-          <input
-            ref="addInput"
-            v-model="newListLabel"
-            class="pill-add-input"
-            type="text"
-            maxlength="20"
-            :placeholder="$t('lists.addPlaceholder')"
-            :aria-label="$t('lists.add')"
-            @keydown.escape.prevent="cancelAdd"
+    <div class="stage">
+      <div class="calendar-pane">
+        <div class="calendar" :style="{ '--week-count': weeks.length }">
+          <week-grid
+            v-for="(week, index) in weeks"
+            :key="week.unix()"
+            :week="week"
+            :dates="dates"
+            :all-done-unix="allDoneUnix"
+            :pos="index"
           />
-        </form>
-        <button
-          v-else
-          type="button"
-          class="pill-add"
-          :disabled="tasks.length >= MAX_LISTS"
-          :title="$t('lists.add')"
-          :aria-label="$t('lists.add')"
-          @click="startAdd"
+        </div>
+      </div>
+      <div class="cluster-pane">
+        <div
+          class="cluster"
+          :aria-busy="clusterReady ? undefined : 'true'"
         >
-          +
-        </button>
-      </template>
-    </horizontal-pills>
-    <div class="auth">
-      <template v-if="isLoggedIn">
-        <p>{{ $t("auth.loggedInAs") }}<br />{{ user.email }}</p>
-        <a href="#" @click.prevent="signOut">{{ $t("auth.logOut") }}</a>
-      </template>
-      <a v-else class="fake-link" @click="signIn">{{ $t("auth.logIn") }}</a>
+          <div
+            class="cluster-slot"
+            :class="{ 'is-ready': clusterReady }"
+          >
+            <div
+              class="cluster-body"
+              :class="{ 'is-ready': clusterReady }"
+              :inert="!clusterReady"
+            >
+              <div class="cluster-cta">
+                <checkmark-button
+                  :done="ctaDone"
+                  :skip-transition="hydrating"
+                  @click="registerTask"
+                  >{{ $t("cta") }}</checkmark-button
+                >
+              </div>
+              <horizontal-pills
+                :items="tasks"
+                :selected-item="selectedItem"
+                @update:selectedItem="(item) => (selectedItem = item)"
+              >
+                <template #default="{ item }">
+                  <span>{{ item.label || item.name }}</span>
+                  <button
+                    v-if="item.name === selectedItem.name"
+                    type="button"
+                    class="pill-remove"
+                    :disabled="tasks.length <= 1"
+                    :title="
+                      tasks.length <= 1
+                        ? $t('lists.lastList')
+                        : $t('lists.remove')
+                    "
+                    :aria-label="
+                      tasks.length <= 1
+                        ? $t('lists.lastList')
+                        : $t('lists.remove')
+                    "
+                    @click.stop="removeTask(item)"
+                  >
+                    ×
+                  </button>
+                </template>
+                <template #after>
+                  <form
+                    v-if="addingList"
+                    class="pill-add-form"
+                    @submit.prevent="commitAdd"
+                  >
+                    <input
+                      ref="addInput"
+                      v-model="newListLabel"
+                      class="pill-add-input"
+                      type="text"
+                      maxlength="20"
+                      :placeholder="$t('lists.addPlaceholder')"
+                      :aria-label="$t('lists.add')"
+                      @keydown.escape.prevent="cancelAdd"
+                    />
+                  </form>
+                  <button
+                    v-else
+                    type="button"
+                    class="pill-add"
+                    :disabled="tasks.length >= MAX_LISTS"
+                    :title="$t('lists.add')"
+                    :aria-label="$t('lists.add')"
+                    @click="startAdd"
+                  >
+                    +
+                  </button>
+                </template>
+              </horizontal-pills>
+              <div class="auth">
+                <template v-if="clusterReady && isLoggedIn">
+                  <p>{{ $t("auth.loggedInAs") }}<br />{{ user.email }}</p>
+                  <a href="#" @click.prevent="signOut">{{
+                    $t("auth.logOut")
+                  }}</a>
+                </template>
+                <a
+                  v-else-if="clusterReady"
+                  class="fake-link"
+                  @click="signIn"
+                  >{{ $t("auth.logIn") }}</a
+                >
+              </div>
+            </div>
+            <div class="cluster-skeleton" aria-hidden="true">
+              <div class="skel skel-btn"></div>
+              <div class="skel skel-pills"></div>
+              <div class="skel skel-auth"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <hr class="divider" />
-    <div class="section">
-      <h2>{{ $t("marketing.whatTitle") }}</h2>
-      <p>{{ $t("marketing.whatBody") }}</p>
-    </div>
-    <div class="section">
-      <h2>{{ $t("marketing.howTitle") }}</h2>
-      <p>{{ $t("marketing.howBody") }}</p>
-    </div>
-    <div class="section">
-      <h2>{{ $t("marketing.colorsTitle") }}</h2>
-      <p>{{ $t("marketing.colorsBody") }}</p>
-    </div>
+    <div class="marketing">
+      <hr class="divider" />
+      <div class="section">
+        <h2>{{ $t("marketing.whatTitle") }}</h2>
+        <p>{{ $t("marketing.whatBody") }}</p>
+      </div>
+      <div class="section">
+        <h2>{{ $t("marketing.howTitle") }}</h2>
+        <p>{{ $t("marketing.howBody") }}</p>
+      </div>
+      <div class="section">
+        <h2>{{ $t("marketing.colorsTitle") }}</h2>
+        <p>{{ $t("marketing.colorsBody") }}</p>
+      </div>
     </div>
   </main>
   <footer>
@@ -126,12 +169,17 @@ export default {
     horizontalPills,
   },
   data() {
+    const weekCount = dayjs().isoWeeksInYear();
+    const currentWeek = dayjs().startOf("isoWeek");
     return {
       dayjs,
-      weeks: [],
+      weeks: Array.from({ length: weekCount }, (_, i) =>
+        currentWeek.subtract(weekCount - 1 - i, "week"),
+      ),
       selectedItem: { name: "goal" },
       addingList: false,
       newListLabel: "",
+      hydrating: true,
       MAX_LISTS,
     };
   },
@@ -147,21 +195,27 @@ export default {
     tasks() {
       return this.activeLists.map((list) => this.toTaskItem(list));
     },
-    ...mapState(useUserStore, ["user", "isLoggedIn"]),
+    clusterReady() {
+      return this.authReady && this.progressReady;
+    },
+    ctaDone() {
+      return this.clusterReady && this.today.isSame(this.lastFinished);
+    },
+    progressWatchId() {
+      if (!this.authReady) {
+        return undefined;
+      }
+      return this.user?.id ?? null;
+    },
+    ...mapState(useUserStore, ["user", "isLoggedIn", "authReady"]),
     ...mapState(useDatesStore, [
       "dates",
       "list",
       "activeLists",
       "allDoneUnix",
       "doneTodayIds",
+      "progressReady",
     ]),
-  },
-  mounted() {
-    let week = dayjs().startOf("isoWeek");
-    for (let i = 0; i < dayjs().isoWeeksInYear(); i++) {
-      this.weeks.push(week.subtract(i, "week"));
-    }
-    this.weeks.reverse();
   },
   methods: {
     toTaskItem(list) {
@@ -258,10 +312,30 @@ export default {
     lastFinished(date) {
       localStorage.lastFinished = date.unix();
     },
-    user: {
+    progressWatchId: {
       immediate: true,
-      handler(user) {
-        this.watchUser(user?.id || null);
+      handler(id) {
+        if (id === undefined) {
+          return;
+        }
+        this.watchUser(id);
+      },
+    },
+    clusterReady: {
+      immediate: true,
+      handler(ready) {
+        if (!ready) {
+          this.hydrating = true;
+          return;
+        }
+        this.hydrating = true;
+        this.$nextTick(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              this.hydrating = false;
+            });
+          });
+        });
       },
     },
     selectedItem(item) {

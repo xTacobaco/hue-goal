@@ -29,7 +29,6 @@ export default {
   data() {
     return {
       dayjs,
-      days: [],
       arrowUrl,
     };
   },
@@ -68,6 +67,10 @@ export default {
     unixDates() {
       return this.dates.map((d) => d.timestamp);
     },
+    days() {
+      const start = this.week.startOf("isoWeek");
+      return Array.from({ length: this.weekdays }, (_, i) => start.add(i, "days"));
+    },
     firstDay() {
       if (this.pos === 0) {
         return this.days[0];
@@ -94,12 +97,6 @@ export default {
     isAllDone(day) {
       return Boolean(this.allDoneUnix?.has?.(day.unix()));
     },
-  },
-  mounted() {
-    let day = this.week.startOf("isoWeek");
-    for (let i = 0; i < this.weekdays; i++) {
-      this.days.push(day.add(i, "days"));
-    }
   },
 };
 </script>

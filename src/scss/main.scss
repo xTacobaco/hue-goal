@@ -40,6 +40,8 @@ nav {
 
 main {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     background-color: colors.$bg-color;
 }
 
@@ -73,7 +75,21 @@ main {
     margin-left: 4px;
 }
 
+.stage {
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-pane {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 350px;
+    margin-inline: auto;
+}
+
 .calendar {
+    --day-slot: 10px;
     display: flex;
     flex-direction: column;
     width: fit-content;
@@ -82,15 +98,110 @@ main {
     align-items: start;
     padding-top: 20px;
     padding-inline: 72px;
+    min-height: calc(20px + var(--week-count, 52) * var(--day-slot));
 }
 
-.centered {
+.cluster-pane {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 350px;
+    margin-inline: auto;
+}
+
+.cluster {
+    width: 100%;
+    max-width: 350px;
+    padding: 0 20px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.cluster-slot {
+    position: relative;
+    width: 100%;
+}
+
+.cluster-cta {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.cluster-cta .btn {
+    max-width: 100%;
+}
+
+.cluster .horizontal-pills-container {
+    min-height: 1.75rem;
+    justify-content: flex-start;
+}
+
+.cluster .horizontal-pills-menu {
+    flex: 0 1 auto;
+    padding-inline: 0;
+}
+
+.cluster-body {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+}
+
+.cluster-body.is-ready {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.cluster-skeleton {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.22s ease;
+}
+
+.cluster-slot.is-ready .cluster-skeleton {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.skel {
+    background-color: colors.$muted;
+    border-radius: 6px;
+}
+
+.skel-btn {
+    height: 2.75rem;
+    width: min(220px, 100%);
+    border-radius: 100000px;
+    margin-bottom: 10px;
+    align-self: center;
+}
+
+.skel-pills {
+    height: 1.75rem;
+    width: min(220px, 70%);
+    margin: 4px 0;
+}
+
+.skel-auth {
+    height: 3.3rem;
+    width: min(200px, 60%);
+    margin-top: 10px;
+}
+
+.marketing {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.centered .divider {
+.marketing .divider {
     width: 200px;
     margin: 30px 0;
     border: none;
@@ -118,9 +229,17 @@ main {
 
 .auth {
     margin-top: 10px;
+    width: 100%;
+    min-height: 3.3rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
+    text-align: left;
+}
+
+.auth p {
+    max-width: 100%;
+    overflow-wrap: anywhere;
 }
 
 .fake-link {
@@ -129,6 +248,13 @@ main {
     font-size: fonts.$normal-font;
     line-height: fonts.$normal-line-height;
     border-bottom: 1px solid #ccc;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cluster-body,
+    .cluster-skeleton {
+        transition: none;
+    }
 }
 
 footer {

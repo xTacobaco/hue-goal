@@ -30,6 +30,7 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   align-items: center;
+  width: 100%;
 }
 
 .horizontal-pills-menu {

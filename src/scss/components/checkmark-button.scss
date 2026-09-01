@@ -80,6 +80,14 @@
     }
 }
 
+.btn.is-hydrating,
+.btn.is-hydrating .btn-label,
+.btn.is-hydrating .btn-text,
+.btn.is-hydrating .checkmark,
+.btn.is-hydrating .checkmark path {
+    transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .btn,
     .btn-label,

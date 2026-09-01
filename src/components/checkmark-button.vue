@@ -1,7 +1,7 @@
 <template>
   <button
     class="btn"
-    :class="{ done: done }"
+    :class="{ done: done, 'is-hydrating': skipTransition }"
     type="button"
     :disabled="done"
   >
@@ -29,6 +29,10 @@
 export default {
   props: {
     done: {
+      type: Boolean,
+      default: false,
+    },
+    skipTransition: {
       type: Boolean,
       default: false,
     },
