@@ -34,13 +34,15 @@
     opacity: 0;
     background: conic-gradient(
         from var(--holo-angle),
-        hsl(0, 90%, 65%),
-        hsl(60, 90%, 60%),
-        hsl(120, 80%, 55%),
-        hsl(180, 90%, 55%),
-        hsl(240, 85%, 65%),
-        hsl(300, 85%, 65%),
-        hsl(0, 90%, 65%)
+        var(--holo-n),
+        var(--holo-ne),
+        var(--holo-e),
+        var(--holo-se),
+        var(--holo-s),
+        var(--holo-sw),
+        var(--holo-w),
+        var(--holo-nw),
+        var(--holo-n)
     );
     -webkit-mask:
         linear-gradient(#fff 0 0) content-box,

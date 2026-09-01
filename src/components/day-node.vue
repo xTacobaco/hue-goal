@@ -18,8 +18,6 @@ const thickness = 5;
 export default {
     data() {
         return {
-            hue: 0,
-            light: 0,
             loaded: false,
             animated: false,
             animationQueue: [],
@@ -59,6 +57,28 @@ export default {
         active() {
             return this.animated || (this.done && this.loaded);
         },
+        hue() {
+            return this.sampleColor(0, 0).hue;
+        },
+        light() {
+            return this.sampleColor(0, 0).light;
+        },
+        holoVars() {
+            const toCss = ({ hue, light }) => {
+                const ringLight = Math.min(68, Math.max(36, light + 10));
+                return `hsl(${hue}, 82%, ${ringLight}%)`;
+            };
+            return {
+                '--holo-n': toCss(this.sampleColor(-1, 0)),
+                '--holo-ne': toCss(this.sampleColor(-1, 1)),
+                '--holo-e': toCss(this.sampleColor(0, 1)),
+                '--holo-se': toCss(this.sampleColor(1, 1)),
+                '--holo-s': toCss(this.sampleColor(1, 0)),
+                '--holo-sw': toCss(this.sampleColor(1, -1)),
+                '--holo-w': toCss(this.sampleColor(0, -1)),
+                '--holo-nw': toCss(this.sampleColor(-1, -1)),
+            };
+        },
         dayStyle() {
             let color = this.active
                 ? `hsl(${this.hue}, 70%, ${this.light}%)`
@@ -68,6 +88,7 @@ export default {
                 : `#202020`;
             const style = {
                 background: color,
+                ...this.holoVars,
             };
             if (!(this.allDone && this.active)) {
                 style.borderColor = border_color;
@@ -78,11 +99,22 @@ export default {
     created() {
         this.emitter.on('animation', this.animate);
     },
-    mounted() {
-        this.hue = (this.day.isoWeek() / dayjs().isoWeeksInYear()) * 359;
-        this.light = 50 - ((this.day.isoWeekday() - 1) / this.weekdays) * 30;
-    },
     methods: {
+        sampleColor(weekDelta, weekdayDelta) {
+            const sample = this.day.add(weekDelta, 'week');
+            const hue = (sample.isoWeek() / dayjs().isoWeeksInYear()) * 359;
+            const weekday = this.day.isoWeekday() + weekdayDelta;
+            let weekdays = 7;
+            if (weekDelta === 0) {
+                weekdays = Math.max(1, this.weekdays);
+            } else if (
+                sample.startOf('isoWeek').isSame(dayjs().startOf('isoWeek'))
+            ) {
+                weekdays = Math.max(1, dayjs().isoWeekday());
+            }
+            const light = 50 - ((weekday - 1) / weekdays) * 30;
+            return { hue, light };
+        },
         startAnimation() {
             this.emitter.emit('animation', this.cords);
         },
