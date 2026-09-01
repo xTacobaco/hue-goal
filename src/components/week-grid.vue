@@ -1,7 +1,7 @@
 <template>
   <div class="week">
     <span v-if="firstDay" class="month" :style="firstDayStyle">{{
-      firstDay.format("MMMM")
+      firstDay.locale($i18n.locale).format("MMMM")
     }}</span>
     <day-node
       v-for="day in days"

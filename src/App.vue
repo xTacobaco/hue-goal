@@ -147,9 +147,12 @@
       >{{ $t("footer.github") }}</a
     >
     <span>{{ $t("footer.copyright") }} &copy; {{ dayjs().year() }}</span>
-    <a :href="$localeHref($i18n.locale === 'sv' ? 'en' : 'sv')">{{
-      $i18n.locale === "sv" ? "English" : "Svenska"
-    }}</a>
+    <button
+      type="button"
+      @click="$setLocale($i18n.locale === 'sv' ? 'en' : 'sv')"
+    >
+      {{ $i18n.locale === "sv" ? "English" : "Svenska" }}
+    </button>
   </footer>
 </template>
 

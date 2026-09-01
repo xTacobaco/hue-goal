@@ -268,8 +268,18 @@ footer {
     color: colors.$text;
 }
 
-footer a {
+footer a,
+footer button {
     color: colors.$text;
     font-size: 11px;
     line-height: inherit;
+}
+
+footer button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
