@@ -19,7 +19,7 @@ body {
 }
 
 body {
-    background: colors.$bg-color;
+    background-color: colors.$nav-bg;
 }
 
 #app {
@@ -29,17 +29,18 @@ body {
     flex-direction: column;
 }
 
-nav,
-footer {
-    background: colors.$nav-bg;
-}
-
 nav {
+    background-color: colors.$nav-bg;
     padding: 14px;
     position: fixed;
     top: 0;
     width: 100%;
     z-index: 1;
+}
+
+main {
+    flex: 1;
+    background-color: colors.$bg-color;
 }
 
 .title {
@@ -131,12 +132,12 @@ nav {
 }
 
 footer {
+    background-color: colors.$nav-bg;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-top: auto;
     padding: 14px;
     font-size: 11px;
     color: colors.$text;

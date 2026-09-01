@@ -6,7 +6,8 @@
       <span class="icon crown"></span>
     </div>
   </nav>
-  <div class="calendar">
+  <main>
+    <div class="calendar">
     <week-grid
       v-for="(week, index) in weeks"
       :key="week.unix()"
@@ -93,7 +94,8 @@
       <h2>{{ $t("marketing.colorsTitle") }}</h2>
       <p>{{ $t("marketing.colorsBody") }}</p>
     </div>
-  </div>
+    </div>
+  </main>
   <footer>
     <a
       href="https://github.com/xTacobaco/hue-goal"
