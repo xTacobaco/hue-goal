@@ -1,42 +1,79 @@
-@use '../abstracts/_fonts.scss';
-
 .btn {
+    --btn-size: 2.75rem; // 44px — WCAG 2.5.5 AAA target
+    --btn-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    height: var(--btn-size);
+    min-width: var(--btn-size);
+    max-width: min(100%, calc(100vw - 2.5rem));
+    padding: 0 1.75rem;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 100000px;
+    color: #fff;
+    background-color: hsl(271, 70%, 50%);
     background-image: linear-gradient(
         30deg,
         hsl(271, 70%, 50%),
         hsl(239, 70%, 50%)
     );
-    max-width: 230px;
-    border: none;
-    outline: none;
-    color: #fff;
-    position: relative;
-    border-radius: 100000px;
-    padding: 10px 30px;
-    margin-bottom: 10px;
-    transition: all 1s ease-in-out;
     box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
+    font: inherit;
+    line-height: 1;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition:
+        padding-inline 0.65s var(--btn-ease),
+        background-color 0.45s ease,
+        background-image 0.45s ease,
+        box-shadow 0.45s ease,
+        transform 0.15s ease;
+    outline: none;
 
-    &:active,
-    &.done {
+    &:active:not(:disabled),
+    &.done,
+    &:disabled {
+        background-color: hsl(271, 70%, 35%);
         background-image: linear-gradient(
             45deg,
             hsl(271, 70%, 35%),
             hsl(239, 70%, 35%)
-        ) !important;
+        );
     }
 
-    &.done {
-        width: 35px;
-        height: 35px;
-        max-width: 35px;
-        padding: 0;
-        cursor: default !important;
+    &:active:not(:disabled) {
+        transform: scale(0.98);
+    }
+
+    &.done,
+    &:disabled {
+        padding-inline: 0;
+        color: #fff;
+        -webkit-text-fill-color: #fff;
+        opacity: 1;
+        cursor: default;
+        transform: none;
+        pointer-events: none;
+    }
+
+    &:focus-visible {
+        box-shadow:
+            0px 5px 10px rgba(0, 0, 0, 0.5),
+            0 0 0 3px #161616,
+            0 0 0 5px #fff;
     }
 }
 
 @media (hover: hover) {
-    .btn:hover {
+    .btn:hover:not(:disabled):not(.done) {
+        background-color: hsl(271, 70%, 40%);
         background-image: linear-gradient(
             30deg,
             hsl(271, 70%, 40%),
@@ -46,6 +83,8 @@
     }
 }
 
-.btn-text {
-    font-size: fonts.$normal-font;
+@media (max-width: 360px) {
+    .btn:not(.done):not(:disabled) {
+        padding-inline: 1.1rem;
+    }
 }
