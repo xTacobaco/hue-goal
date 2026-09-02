@@ -298,6 +298,14 @@ export default {
           this.stopPointerListen();
           return;
         }
+        // Capture after axis lock so the pan survives leaving the short strip.
+        if (menu.hasPointerCapture?.(event.pointerId) !== true) {
+          try {
+            menu.setPointerCapture(event.pointerId);
+          } catch (_) {
+            /* some browsers reject capture mid-gesture */
+          }
+        }
         this.drag = { ...this.drag, moved: true };
       }
       event.preventDefault();
@@ -310,6 +318,18 @@ export default {
       }
       if (event?.pointerId != null && event.pointerId !== this.drag.pointerId) {
         return;
+      }
+      const menu = this.$refs.navMenu;
+      if (
+        menu &&
+        event?.pointerId != null &&
+        menu.hasPointerCapture?.(event.pointerId)
+      ) {
+        try {
+          menu.releasePointerCapture(event.pointerId);
+        } catch (_) {
+          /* already released */
+        }
       }
       this.didPan = this.drag.moved;
       this.drag = null;
