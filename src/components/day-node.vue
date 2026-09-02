@@ -10,7 +10,7 @@
             class="day-header"
             :class="{ 'is-today': isTodayWeekday }"
             :style="todayHeaderStyle"
-        >{{ day.format("dd")[0] }}</span>
+        >{{ $t("weekdays")[day.isoWeekday() - 1] }}</span>
     </span>
 </template>
 
