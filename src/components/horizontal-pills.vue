@@ -5,10 +5,6 @@
       class="horizontal-pills-menu"
       :class="{ 'is-panning': panning, 'can-pan': canPan }"
       @pointerdown="onPointerDown"
-      @pointermove="onPointerMove"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerUp"
-      @lostpointercapture="onPointerUp"
     >
       <button
         v-for="(item, index) in items"
@@ -190,6 +186,7 @@ export default {
       drag: null,
       didPan: false,
       panReset: null,
+      listening: false,
     };
   },
   computed: {
@@ -207,6 +204,7 @@ export default {
   },
   unmounted() {
     clearTimeout(this.panReset);
+    this.stopPointerListen();
     this.resizeObserver?.disconnect();
   },
   methods: {
@@ -241,6 +239,27 @@ export default {
       const menu = this.$refs.navMenu;
       this.canPan = Boolean(menu && menu.scrollWidth > menu.clientWidth + 1);
     },
+    startPointerListen() {
+      if (this.listening) {
+        return;
+      }
+      this.listening = true;
+      window.addEventListener("pointermove", this.onPointerMove, {
+        capture: true,
+        passive: false,
+      });
+      window.addEventListener("pointerup", this.onPointerUp, true);
+      window.addEventListener("pointercancel", this.onPointerUp, true);
+    },
+    stopPointerListen() {
+      if (!this.listening) {
+        return;
+      }
+      this.listening = false;
+      window.removeEventListener("pointermove", this.onPointerMove, true);
+      window.removeEventListener("pointerup", this.onPointerUp, true);
+      window.removeEventListener("pointercancel", this.onPointerUp, true);
+    },
     onPointerDown(event) {
       if (event.pointerType === "mouse" && event.button !== 0) {
         return;
@@ -256,8 +275,8 @@ export default {
         startY: event.clientY,
         startScroll: menu.scrollLeft,
         moved: false,
-        captured: false,
       };
+      this.startPointerListen();
     },
     onPointerMove(event) {
       if (!this.drag || event.pointerId !== this.drag.pointerId) {
@@ -273,19 +292,20 @@ export default {
         if (Math.abs(dx) < 6 && Math.abs(dy) < 6) {
           return;
         }
-        // Vertical (or diagonal-up) intent: drop the drag so the page can pan.
+        // Vertical intent: release so the page can keep panning.
         if (Math.abs(dy) >= Math.abs(dx)) {
           this.drag = null;
+          this.stopPointerListen();
           return;
         }
-        menu.setPointerCapture(event.pointerId);
-        this.drag = { ...this.drag, moved: true, captured: true };
+        this.drag = { ...this.drag, moved: true };
       }
       event.preventDefault();
       menu.scrollLeft = this.drag.startScroll - dx;
     },
     onPointerUp(event) {
       if (!this.drag) {
+        this.stopPointerListen();
         return;
       }
       if (event?.pointerId != null && event.pointerId !== this.drag.pointerId) {
@@ -293,6 +313,7 @@ export default {
       }
       this.didPan = this.drag.moved;
       this.drag = null;
+      this.stopPointerListen();
       if (this.didPan) {
         clearTimeout(this.panReset);
         this.panReset = setTimeout(() => {
