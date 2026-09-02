@@ -132,14 +132,49 @@ main {
     max-width: 100%;
 }
 
+.cluster-lists {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    min-height: 28px;
+}
+
 .cluster .horizontal-pills-container {
-    min-height: 1.75rem;
-    justify-content: flex-start;
+    min-height: 28px;
 }
 
 .cluster .horizontal-pills-menu {
     flex: 0 1 auto;
     padding-inline: 0;
+}
+
+.track-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 2px solid colors.$pill-border;
+    background: colors.$pill-surface;
+    color: colors.$text;
+    font: inherit;
+    font-size: fonts.$normal-font;
+    font-weight: 400;
+    line-height: fonts.$normal-line-height;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.track-more svg {
+    width: 13px;
+    height: 13px;
+}
+
+.track-more:focus-visible {
+    outline: 2px solid colors.$text;
+    outline-offset: 2px;
 }
 
 .cluster-body {
@@ -183,9 +218,11 @@ main {
 }
 
 .skel-pills {
-    height: 1.75rem;
-    width: min(220px, 70%);
+    height: 28px;
+    width: min(180px, 60%);
+    border-radius: 6px;
     margin: 4px 0;
+    align-self: center;
 }
 
 .skel-auth {

@@ -1,23 +1,33 @@
 <template>
   <div class="horizontal-pills-container">
-    <div ref="navMenu" class="horizontal-pills-menu">
-      <div
+    <div
+      ref="navMenu"
+      class="horizontal-pills-menu"
+      :class="{ 'is-panning': panning, 'can-pan': canPan }"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+      @lostpointercapture="onPointerUp"
+    >
+      <button
         v-for="(item, index) in items"
         :key="item.name"
-        @click.stop.prevent="selectItem(index)"
+        type="button"
         class="gmf-horizontal-pills-item"
         :class="{
           'gmf-active': index === selectedIndex,
           'gmf-done': item.done,
         }"
-        :ref="el => setItemRef(el, item)"
+        :aria-pressed="index === selectedIndex ? 'true' : 'false'"
+        @click="selectItem(index)"
       >
         <slot :item="item" :index="index">
           <template v-if="item.name">
-            <div>{{ item.label || item.name }}</div>
+            <span>{{ item.label || item.name }}</span>
           </template>
         </slot>
-      </div>
+      </button>
     </div>
     <slot name="after"></slot>
   </div>
@@ -26,110 +36,136 @@
 .horizontal-pills-container {
   display: flex;
   position: relative;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  overflow: visible;
   align-items: center;
-  width: 100%;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  gap: 6px;
 }
 
 .horizontal-pills-menu {
   margin: 0;
   display: flex;
   background: inherit;
-  padding: 4px;
-  overflow-x: scroll;
+  padding: 0;
+  overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
   position: relative;
-  gap: 1px;
-  flex: 1;
+  gap: 6px;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+  user-select: none;
 }
 
-.horizontal-pills-menu::-webkit-scrollbar, .horizontal-pills-container::-webkit-scrollbar {
+.horizontal-pills-menu.can-pan {
+  cursor: grab;
+}
+
+.horizontal-pills-menu.is-panning {
+  cursor: grabbing;
+}
+
+.horizontal-pills-menu.is-panning .gmf-horizontal-pills-item {
+  cursor: grabbing;
+}
+
+.horizontal-pills-menu::-webkit-scrollbar,
+.horizontal-pills-container::-webkit-scrollbar {
   display: none;
 }
 
 .gmf-horizontal-pills-item {
+  --pill-accent: linear-gradient(
+    30deg,
+    hsl(271, 70%, 50%),
+    hsl(239, 70%, 50%)
+  );
+  --pill-accent-size: var(--cta-w, 14rem) var(--cta-h, 2.75rem);
   flex-shrink: 0;
   cursor: pointer;
   user-select: none;
   align-items: center;
-  gap: 2px;
   display: inline-flex;
-  padding: 4px;
-  color: white;
+  padding: 2px 8px;
+  color: #c8c8c8;
+  background: #1a1a1a;
+  border: 2px solid #3a3a3a;
   border-radius: 6px;
-  font-size: 14px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.1rem;
   position: relative;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .gmf-horizontal-pills-item.gmf-done {
   color: #7229d4;
+  border-color: transparent;
+  background:
+    linear-gradient(#1a1a1a, #1a1a1a) padding-box,
+    var(--pill-accent) border-box;
+  background-size: auto, var(--pill-accent-size);
+  background-position: 0 0, left center;
+  background-repeat: no-repeat;
 }
 
 .gmf-horizontal-pills-item.gmf-active {
-  background-color: white;
-  color: black;
+  color: #fff;
+  border-color: transparent;
+  background:
+    linear-gradient(#1a1a1a, #1a1a1a) padding-box,
+    var(--pill-accent) border-box;
+  background-size: auto, var(--pill-accent-size);
+  background-position: 0 0, left center;
+  background-repeat: no-repeat;
 }
 
 .gmf-horizontal-pills-item.gmf-active.gmf-done {
-  background-color: #7229d4;
-  color: white;
+  color: #fff;
+  border-color: transparent;
+  background:
+    var(--pill-accent) padding-box,
+    var(--pill-accent) border-box;
+  background-size: var(--pill-accent-size), var(--pill-accent-size);
+  background-position: left center, left center;
+  background-repeat: no-repeat;
 }
 
-.pill-remove {
-  border: none;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  padding: 0 2px;
-}
-
-.pill-remove:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.gmf-horizontal-pills-item:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 .pill-add {
   flex-shrink: 0;
-  border: none;
-  background: transparent;
-  color: white;
-  cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
-  padding: 4px 8px;
-}
-
-.pill-add:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pill-add-form {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
-
-.pill-add-input {
-  background: #161616;
-  color: white;
-  border: 1px solid #363636;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #3a3a3a;
   border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 14px;
-  width: 120px;
-  outline: none;
+  background: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.pill-add-input:focus {
-  border-color: #7229d4;
+.pill-add:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 </style>
 <script>
@@ -145,32 +181,47 @@ export default {
       default: null,
     },
   },
-  data () {
+  data() {
     return {
       selectedIndex: 0,
-      itemRefMap: {},
+      canPan: false,
+      drag: null,
+      didPan: false,
+      panReset: null,
     };
   },
-  mounted () {
-    this.$nextTick(() => {
-      this.checkWidth();
-    });
+  computed: {
+    panning() {
+      return Boolean(this.drag?.moved);
+    },
+  },
+  mounted() {
     this.syncSelectedIndex();
+    this.updateOverflow();
+    this.resizeObserver = new ResizeObserver(() => this.updateOverflow());
+    if (this.$refs.navMenu) {
+      this.resizeObserver.observe(this.$refs.navMenu);
+    }
+  },
+  unmounted() {
+    clearTimeout(this.panReset);
+    this.resizeObserver?.disconnect();
   },
   methods: {
-    checkWidth () {
-      const navMenu = this.$refs.navMenu;
-    },
-    selectItem (index) {
+    selectItem(index) {
+      if (this.didPan) {
+        this.didPan = false;
+        return;
+      }
       this.selectedIndex = index;
-      this.$emit('update:selectedItem', this.items[index]);
+      this.$emit("update:selectedItem", this.items[index]);
     },
-    syncSelectedIndex () {
+    syncSelectedIndex() {
       const index = this.getItemIndex(this.selectedItem);
       this.selectedIndex = index == null ? 0 : index;
     },
-    getItemIndex (item) {
-      if (! item) {
+    getItemIndex(item) {
+      if (!item) {
         return null;
       }
       for (const i in this.items) {
@@ -181,24 +232,72 @@ export default {
       }
       return null;
     },
-    getItemId (item) {
+    getItemId(item) {
       return item.id || item.value || item.name;
     },
-    setItemRef (el, item) {
-      this.itemRefMap[this.getItemId(item)] = el;
+    updateOverflow() {
+      const menu = this.$refs.navMenu;
+      this.canPan = Boolean(menu && menu.scrollWidth > menu.clientWidth + 1);
+    },
+    onPointerDown(event) {
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        return;
+      }
+      const menu = this.$refs.navMenu;
+      if (!menu) {
+        return;
+      }
+      this.didPan = false;
+      this.drag = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startScroll: menu.scrollLeft,
+        moved: false,
+        captured: false,
+      };
+    },
+    onPointerMove(event) {
+      if (!this.drag || event.pointerId !== this.drag.pointerId) {
+        return;
+      }
+      const menu = this.$refs.navMenu;
+      if (!menu) {
+        return;
+      }
+      const dx = event.clientX - this.drag.startX;
+      if (!this.drag.moved && Math.abs(dx) < 6) {
+        return;
+      }
+      if (!this.drag.captured) {
+        menu.setPointerCapture(event.pointerId);
+      }
+      this.drag = { ...this.drag, moved: true, captured: true };
+      event.preventDefault();
+      menu.scrollLeft = this.drag.startScroll - dx;
+    },
+    onPointerUp(event) {
+      if (!this.drag) {
+        return;
+      }
+      if (event?.pointerId != null && event.pointerId !== this.drag.pointerId) {
+        return;
+      }
+      this.didPan = this.drag.moved;
+      this.drag = null;
+      if (this.didPan) {
+        clearTimeout(this.panReset);
+        this.panReset = setTimeout(() => {
+          this.didPan = false;
+        }, 50);
+      }
     },
   },
   watch: {
-    items () {
-      this.$nextTick(() => {
-        this.checkWidth();
-      });
+    items() {
       this.syncSelectedIndex();
+      this.$nextTick(() => this.updateOverflow());
     },
-    /**
-     * Selected item is updated in parent component.
-     */
-    selectedItem () {
+    selectedItem() {
       this.syncSelectedIndex();
     },
   },

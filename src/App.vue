@@ -42,63 +42,46 @@
                   >{{ $t("cta") }}</checkmark-button
                 >
               </div>
-              <horizontal-pills
-                :items="tasks"
-                :selected-item="selectedItem"
-                @update:selectedItem="(item) => (selectedItem = item)"
-              >
-                <template #default="{ item }">
-                  <span>{{ item.label || item.name }}</span>
-                  <button
-                    v-if="item.name === selectedItem.name"
-                    type="button"
-                    class="pill-remove"
-                    :disabled="tasks.length <= 1"
-                    :title="
-                      tasks.length <= 1
-                        ? $t('lists.lastList')
-                        : $t('lists.remove')
-                    "
-                    :aria-label="
-                      tasks.length <= 1
-                        ? $t('lists.lastList')
-                        : $t('lists.remove')
-                    "
-                    @click.stop="removeTask(item)"
-                  >
-                    ×
-                  </button>
-                </template>
-                <template #after>
-                  <form
-                    v-if="addingList"
-                    class="pill-add-form"
-                    @submit.prevent="commitAdd"
-                  >
-                    <input
-                      ref="addInput"
-                      v-model="newListLabel"
-                      class="pill-add-input"
-                      type="text"
-                      maxlength="20"
-                      :placeholder="$t('lists.addPlaceholder')"
-                      :aria-label="$t('lists.add')"
-                      @keydown.escape.prevent="cancelAdd"
+              <div class="cluster-lists">
+                <button
+                  v-if="tasks.length <= 1"
+                  type="button"
+                  class="track-more"
+                  :title="$t('lists.trackMore')"
+                  @click="openEditor(true)"
+                >
+                  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path
+                      d="M8 3.2v9.6M3.2 8h9.6"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
                     />
-                  </form>
-                  <button
-                    v-else
-                    type="button"
-                    class="pill-add"
-                    :disabled="tasks.length >= MAX_LISTS"
-                    :title="$t('lists.add')"
-                    :aria-label="$t('lists.add')"
-                    @click="startAdd"
-                  >
-                    +
-                  </button>
-                </template>
-              </horizontal-pills>
+                  </svg>
+                  {{ $t("lists.trackMore") }}
+                </button>
+                <horizontal-pills
+                  v-else
+                  :items="tasks"
+                  :selected-item="selectedItem"
+                  @update:selectedItem="(item) => (selectedItem = item)"
+                >
+                  <template #default="{ item }">
+                    <span>{{ item.label || item.name }}</span>
+                  </template>
+                  <template #after>
+                    <button
+                      type="button"
+                      class="pill-add"
+                      :title="$t('lists.edit')"
+                      :aria-label="$t('lists.edit')"
+                      @click="openEditor(false)"
+                    >
+                      +
+                    </button>
+                  </template>
+                </horizontal-pills>
+              </div>
               <div class="auth">
                 <template v-if="clusterReady && isLoggedIn">
                   <p>{{ $t("auth.loggedInAs") }}<br />{{ user.email }}</p>
@@ -139,6 +122,12 @@
       </div>
     </div>
   </main>
+  <task-editor
+    v-if="editorOpen"
+    :tasks="tasks"
+    :start-adding="editorStartAdding"
+    @close="editorOpen = false"
+  />
   <footer>
     <a
       href="https://github.com/xTacobaco/hue-goal"
@@ -162,14 +151,16 @@ import dayjs from "@/utils/dayjs";
 import weekGrid from "@/components/week-grid.vue";
 import checkmarkButton from "@/components/checkmark-button.vue";
 import horizontalPills from "@/components/horizontal-pills.vue";
+import taskEditor from "@/components/task-editor.vue";
 import { useUserStore } from "@/datastores/user.js";
-import { MAX_LISTS, useDatesStore } from "@/datastores/dates.js";
+import { builtinListKey, useDatesStore } from "@/datastores/dates.js";
 
 export default {
   components: {
     weekGrid,
     checkmarkButton,
     horizontalPills,
+    taskEditor,
   },
   data() {
     const weekCount = dayjs().isoWeeksInYear();
@@ -180,10 +171,9 @@ export default {
         currentWeek.subtract(weekCount - 1 - i, "week"),
       ),
       selectedItem: { name: "goal" },
-      addingList: false,
-      newListLabel: "",
+      editorOpen: false,
+      editorStartAdding: false,
       hydrating: true,
-      MAX_LISTS,
     };
   },
   computed: {
@@ -222,68 +212,17 @@ export default {
   },
   methods: {
     toTaskItem(list) {
-      const label =
-        list.id === "goal" || list.id === "task"
-          ? this.$t(`lists.${list.id}`)
-          : list.label;
+      const translated = builtinListKey(list);
       return {
         name: list.id,
         id: list.id,
-        label,
+        label: translated ? this.$t(translated) : list.label,
         done: this.doneTodayIds.has(list.id),
       };
     },
-    async ensureUserId() {
-      if (this.user?.id) {
-        return this.user.id;
-      }
-      return this.tempSignIn();
-    },
-    startAdd() {
-      if (this.tasks.length >= MAX_LISTS) {
-        return;
-      }
-      this.addingList = true;
-      this.newListLabel = "";
-      this.$nextTick(() => {
-        this.$refs.addInput?.focus();
-      });
-    },
-    cancelAdd() {
-      this.addingList = false;
-      this.newListLabel = "";
-    },
-    async commitAdd() {
-      const label = this.newListLabel.trim();
-      if (!label) {
-        return;
-      }
-      try {
-        const userId = await this.ensureUserId();
-        const list = await this.addList({ userId, label });
-        if (list) {
-          this.selectedItem = this.toTaskItem(list);
-          this.cancelAdd();
-        }
-      } catch {
-        // Keep the add field open so the label is not lost if the write fails.
-      }
-    },
-    async removeTask(item) {
-      if (this.tasks.length <= 1) {
-        return;
-      }
-      try {
-        const userId = await this.ensureUserId();
-        await this.removeList({ userId, id: item.name });
-        const next =
-          this.tasks.find((task) => task.name === this.list) || this.tasks[0];
-        if (next) {
-          this.selectedItem = next;
-        }
-      } catch {
-        // Leave the current selection; store rolls lists back on failure.
-      }
+    openEditor(startAdding) {
+      this.editorStartAdding = Boolean(startAdding);
+      this.editorOpen = true;
     },
     async registerTask() {
       if (this.today.isSame(this.lastFinished, "day")) {
@@ -291,7 +230,7 @@ export default {
       }
 
       const date = dayjs().startOf("date");
-      const userId = await this.ensureUserId();
+      const userId = this.user?.id ?? (await this.tempSignIn());
       try {
         await this.finishTask({
           userId,
@@ -307,8 +246,6 @@ export default {
       "finishTask",
       "watchUser",
       "setList",
-      "addList",
-      "removeList",
     ]),
   },
   watch: {

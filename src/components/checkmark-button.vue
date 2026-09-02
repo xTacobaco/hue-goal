@@ -37,5 +37,57 @@ export default {
       default: false,
     },
   },
+  mounted() {
+    this.publishGradientSize();
+    window.addEventListener("resize", this.publishGradientSize);
+  },
+  updated() {
+    this.publishGradientSize();
+  },
+  unmounted() {
+    window.removeEventListener("resize", this.publishGradientSize);
+    if (this.measureFrame) {
+      cancelAnimationFrame(this.measureFrame);
+    }
+  },
+  methods: {
+    publishGradientSize() {
+      if (this.measureFrame) {
+        cancelAnimationFrame(this.measureFrame);
+      }
+      this.measureFrame = requestAnimationFrame(() => {
+        this.measureFrame = 0;
+        this.measureNow();
+      });
+    },
+    measureNow() {
+      const btn = this.$el;
+      if (!(btn instanceof Element)) {
+        return;
+      }
+      const clone = btn.cloneNode(true);
+      clone.classList.remove("done", "is-hydrating");
+      clone.disabled = false;
+      clone.setAttribute("aria-hidden", "true");
+      clone.tabIndex = -1;
+      clone.style.position = "absolute";
+      clone.style.left = "0";
+      clone.style.top = "0";
+      clone.style.visibility = "hidden";
+      clone.style.pointerEvents = "none";
+      clone.style.width = "auto";
+      clone.style.maxWidth = getComputedStyle(btn).maxWidth;
+      btn.insertAdjacentElement("afterend", clone);
+      const width = Math.round(clone.getBoundingClientRect().width);
+      const height = Math.round(clone.getBoundingClientRect().height);
+      clone.remove();
+      if (!width || !height) {
+        return;
+      }
+      const host = btn.closest(".cluster") || btn;
+      host.style.setProperty("--cta-w", `${width}px`);
+      host.style.setProperty("--cta-h", `${height}px`);
+    },
+  },
 };
 </script>

@@ -13,9 +13,24 @@ import animations from "@/utils/animations";
 
 let unsubDates = null;
 
-const LABEL_MAX = 20;
+export const LABEL_MAX = 20;
 export const MAX_LISTS = 10;
 const LIST_ID_RE = /^[a-zA-Z0-9_]+$/;
+const BUILTIN_LABELS = {
+  goal: ["Goal", "Mål"],
+  task: ["Task", "Uppgift"],
+};
+
+export function builtinListKey(list) {
+  const defaults = BUILTIN_LABELS[list?.id];
+  if (!defaults) {
+    return null;
+  }
+  if (!list.label || defaults.includes(list.label)) {
+    return `lists.${list.id}`;
+  }
+  return null;
+}
 
 export function defaultLists() {
   return [
@@ -341,6 +356,81 @@ export const useDatesStore = defineStore("dates", {
       } catch (error) {
         this.lists = previousLists;
         this.list = previousSelected;
+        throw error;
+      }
+    },
+    async renameList({ userId, id, label }) {
+      if (!userId || !id) {
+        return false;
+      }
+
+      const trimmed = (label || "").trim().slice(0, LABEL_MAX);
+      if (!trimmed) {
+        return false;
+      }
+
+      const target = this.lists.find(
+        (list) => list.id === id && list.deletedAt == null,
+      );
+      if (!target) {
+        return false;
+      }
+      if (target.label === trimmed) {
+        return true;
+      }
+
+      const previousLists = this.lists;
+      const lists = this.lists.map((list) =>
+        list.id === id ? { ...list, label: trimmed } : list,
+      );
+      this.lists = lists;
+
+      try {
+        await this.persistLists(userId, lists);
+        return true;
+      } catch (error) {
+        this.lists = previousLists;
+        throw error;
+      }
+    },
+    async reorderLists({ userId, orderedIds }) {
+      if (!userId || !Array.isArray(orderedIds) || orderedIds.length === 0) {
+        return false;
+      }
+
+      const active = this.lists.filter((list) => list.deletedAt == null);
+      const currentOrder = active.map((list) => list.id);
+      if (
+        currentOrder.length === orderedIds.length &&
+        currentOrder.every((id, index) => id === orderedIds[index])
+      ) {
+        return true;
+      }
+
+      const byId = new Map(this.lists.map((list) => [list.id, list]));
+      const seen = new Set();
+      const next = [];
+      for (const id of orderedIds) {
+        const list = byId.get(id);
+        if (list && list.deletedAt == null && !seen.has(id)) {
+          next.push(list);
+          seen.add(id);
+        }
+      }
+      for (const list of this.lists) {
+        if (!seen.has(list.id)) {
+          next.push(list);
+        }
+      }
+
+      const previousLists = this.lists;
+      this.lists = next;
+
+      try {
+        await this.persistLists(userId, next);
+        return true;
+      } catch (error) {
+        this.lists = previousLists;
         throw error;
       }
     },

@@ -30,12 +30,17 @@ function writeStoredLocale(locale) {
   }
 }
 
-export function t(key) {
-  return (
+export function t(key, vars) {
+  let value =
     readByPath(messages[i18nState.locale], key) ??
     readByPath(messages.en, key) ??
-    key
-  );
+    key;
+  if (vars && typeof value === "string") {
+    value = value.replace(/\{(\w+)\}/g, (_, name) =>
+      vars[name] == null ? `{${name}}` : String(vars[name]),
+    );
+  }
+  return value;
 }
 
 export function localeFromHostname(hostname = window.location.hostname) {
