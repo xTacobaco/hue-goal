@@ -11,6 +11,7 @@
 
 <script>
 import dayjs from '@/utils/dayjs';
+import { useDatesStore } from '@/datastores/dates.js';
 
 const speed = 50;
 const thickness = 5;
@@ -116,6 +117,7 @@ export default {
             return { hue, light };
         },
         startAnimation() {
+            useDatesStore().recordScreenClick();
             this.emitter.emit('animation', this.cords);
         },
         animate(pos) {

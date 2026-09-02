@@ -36,10 +36,7 @@
             v-for="row in rows"
             :key="row.id"
             class="task-editor-row"
-            :class="{
-              dragging: dragId === row.id,
-              selected: row.id === selectedId,
-            }"
+            :class="{ dragging: dragId === row.id }"
             :data-task-id="row.id"
           >
             <template v-if="confirmId === row.id">
@@ -82,7 +79,6 @@
                   <circle cx="9" cy="13" r="1.15" fill="currentColor" />
                 </svg>
               </button>
-              <span v-else class="task-editor-grip-spacer"></span>
               <input
                 class="task-editor-name"
                 type="text"
@@ -128,21 +124,6 @@
             :aria-label="$t('lists.add')"
             @keydown.escape.stop.prevent="cancelAdd"
           />
-          <button
-            type="button"
-            class="task-editor-icon"
-            :aria-label="$t('lists.close')"
-            @click="cancelAdd"
-          >
-            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path
-                d="M4 4l8 8M12 4l-8 8"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-              />
-            </svg>
-          </button>
           <button
             type="submit"
             class="task-editor-add-submit"
@@ -206,10 +187,6 @@ export default {
     };
   },
   computed: {
-    selectedId() {
-      return this.list;
-    },
-    ...mapState(useDatesStore, ["list"]),
     ...mapState(useUserStore, ["user"]),
   },
   watch: {
@@ -470,10 +447,6 @@ export default {
   border: 1px solid transparent;
 }
 
-.task-editor-row.selected {
-  background: #161616;
-}
-
 .task-editor-row.dragging {
   opacity: 0.45;
   border-style: dashed;
@@ -489,8 +462,7 @@ export default {
 }
 
 .task-editor-keep,
-.task-editor-remove,
-.task-editor-add-submit {
+.task-editor-remove {
   border: none;
   border-radius: 6px;
   padding: 5px 9px;
@@ -510,14 +482,46 @@ export default {
 }
 
 .task-editor-add-submit {
-  background: #7229d4;
-  color: #fff;
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
   font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  background-color: hsl(271, 70%, 50%);
+  background-image: linear-gradient(
+    30deg,
+    hsl(271, 70%, 50%),
+    hsl(239, 70%, 50%)
+  );
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
 }
 
 .task-editor-add-submit:disabled {
-  opacity: 0.45;
+  background-color: hsl(271, 70%, 35%);
+  background-image: linear-gradient(
+    45deg,
+    hsl(271, 70%, 35%),
+    hsl(239, 70%, 35%)
+  );
+  box-shadow: none;
   cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .task-editor-add-submit:hover:not(:disabled) {
+    background-color: hsl(271, 70%, 40%);
+    background-image: linear-gradient(
+      30deg,
+      hsl(271, 70%, 40%),
+      hsl(239, 70%, 40%)
+    );
+  }
 }
 
 .task-editor-grip,
@@ -564,11 +568,6 @@ export default {
 .task-editor-icon:disabled {
   opacity: 0.35;
   cursor: not-allowed;
-}
-
-.task-editor-grip-spacer {
-  width: 28px;
-  flex-shrink: 0;
 }
 
 .task-editor-name {

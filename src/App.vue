@@ -1,9 +1,12 @@
 <template>
   <nav>
-    <div class="title">
-      <span class="hue">hue</span>
-      <span>goal</span>
-      <span class="icon crown"></span>
+    <div class="bar">
+      <div class="title">
+        <span class="hue">hue</span>
+        <span>goal</span>
+        <span class="icon crown"></span>
+      </div>
+      <profile-menu />
     </div>
   </nav>
   <main>
@@ -82,25 +85,10 @@
                   </template>
                 </horizontal-pills>
               </div>
-              <div class="auth">
-                <template v-if="clusterReady && isLoggedIn">
-                  <p>{{ $t("auth.loggedInAs") }}<br />{{ user.email }}</p>
-                  <a href="#" @click.prevent="signOut">{{
-                    $t("auth.logOut")
-                  }}</a>
-                </template>
-                <a
-                  v-else-if="clusterReady"
-                  class="fake-link"
-                  @click="signIn"
-                  >{{ $t("auth.logIn") }}</a
-                >
-              </div>
             </div>
             <div class="cluster-skeleton" aria-hidden="true">
               <div class="skel skel-btn"></div>
               <div class="skel skel-pills"></div>
-              <div class="skel skel-auth"></div>
             </div>
           </div>
         </div>
@@ -129,19 +117,21 @@
     @close="editorOpen = false"
   />
   <footer>
-    <a
-      href="https://github.com/xTacobaco/hue-goal"
-      target="_blank"
-      rel="noopener noreferrer"
-      >{{ $t("footer.github") }}</a
-    >
-    <span>{{ $t("footer.copyright") }} &copy; {{ dayjs().year() }}</span>
-    <button
-      type="button"
-      @click="$setLocale($i18n.locale === 'sv' ? 'en' : 'sv')"
-    >
-      {{ $i18n.locale === "sv" ? "English" : "Svenska" }}
-    </button>
+    <div class="bar">
+      <a
+        href="https://github.com/xTacobaco/hue-goal"
+        target="_blank"
+        rel="noopener noreferrer"
+        >{{ $t("footer.github") }}</a
+      >
+      <span>{{ $t("footer.copyright") }} &copy; {{ dayjs().year() }}</span>
+      <button
+        type="button"
+        @click="$setLocale($i18n.locale === 'sv' ? 'en' : 'sv')"
+      >
+        {{ $i18n.locale === "sv" ? "English" : "Svenska" }}
+      </button>
+    </div>
   </footer>
 </template>
 
@@ -152,6 +142,7 @@ import weekGrid from "@/components/week-grid.vue";
 import checkmarkButton from "@/components/checkmark-button.vue";
 import horizontalPills from "@/components/horizontal-pills.vue";
 import taskEditor from "@/components/task-editor.vue";
+import profileMenu from "@/components/profile-menu.vue";
 import { useUserStore } from "@/datastores/user.js";
 import { builtinListKey, useDatesStore } from "@/datastores/dates.js";
 
@@ -161,6 +152,7 @@ export default {
     checkmarkButton,
     horizontalPills,
     taskEditor,
+    profileMenu,
   },
   data() {
     const weekCount = dayjs().isoWeeksInYear();
@@ -200,7 +192,7 @@ export default {
       }
       return this.user?.id ?? null;
     },
-    ...mapState(useUserStore, ["user", "isLoggedIn", "authReady"]),
+    ...mapState(useUserStore, ["user", "authReady"]),
     ...mapState(useDatesStore, [
       "dates",
       "list",
@@ -241,7 +233,7 @@ export default {
         console.error("Failed to save today's task", error);
       }
     },
-    ...mapActions(useUserStore, ["signIn", "signOut", "tempSignIn"]),
+    ...mapActions(useUserStore, ["tempSignIn"]),
     ...mapActions(useDatesStore, [
       "finishTask",
       "watchUser",

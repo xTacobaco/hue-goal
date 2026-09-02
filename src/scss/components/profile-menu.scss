@@ -1,0 +1,189 @@
+@use "../abstracts/colors";
+
+.profile {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.profile-skel {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: colors.$muted;
+}
+
+.login-pill {
+    height: 32px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 999px;
+    color: colors.$text;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    background-color: hsl(271, 70%, 50%);
+    background-image: linear-gradient(
+        30deg,
+        hsl(271, 70%, 50%),
+        hsl(239, 70%, 50%)
+    );
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+@media (hover: hover) {
+    .login-pill:hover {
+        background-color: hsl(271, 70%, 40%);
+        background-image: linear-gradient(
+            30deg,
+            hsl(271, 70%, 40%),
+            hsl(239, 70%, 40%)
+        );
+    }
+}
+
+.login-pill:focus-visible,
+.profile-avatar:focus-visible,
+.profile-close:focus-visible,
+.profile-logout:focus-visible {
+    outline: 2px solid colors.$text;
+    outline-offset: 3px;
+}
+
+.profile-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid colors.$brand;
+    background: #1a1a1a;
+    color: colors.$brand;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.profile-avatar svg {
+    width: 16px;
+    height: 16px;
+}
+
+.profile-overlay {
+    position: fixed;
+    top: 60px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1;
+}
+
+.profile-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(340px, calc(100vw - 28px));
+    background: colors.$nav-bg;
+    border: 1px solid colors.$muted;
+    border-radius: 12px;
+    padding: 14px;
+    color: colors.$text;
+    text-align: left;
+    z-index: 2;
+}
+
+.profile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.profile-head h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.profile-close {
+    border: none;
+    background: transparent;
+    color: #ccc;
+    padding: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    line-height: 1;
+}
+
+.profile-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.profile-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px;
+    border-radius: 8px;
+    text-align: left;
+    background: colors.$bg-color;
+}
+
+.profile-stat-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35em;
+    min-width: 0;
+}
+
+.profile-stat-n {
+    color: colors.$brand;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    flex-shrink: 0;
+}
+
+.profile-stat-title b {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.profile-stat-desc {
+    font-size: 12px;
+    color: #ccc;
+    line-height: 1.4;
+}
+
+.profile-logout {
+    margin-top: 12px;
+    width: 100%;
+    height: 40px;
+    border: none;
+    border-radius: 999px;
+    background: colors.$brand;
+    color: colors.$text;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+@media (max-width: 380px) {
+    .login-pill {
+        font-size: 11px;
+        padding: 0 10px;
+    }
+}

@@ -10,6 +10,32 @@ import {
 import { db } from "@/utils/config";
 import dayjs from "@/utils/dayjs";
 import animations from "@/utils/animations";
+import {
+  bestStreak,
+  currentStreak,
+  dreamWeekCount,
+  tapCount,
+  uniqueDayUnix,
+} from "@/utils/stats";
+
+const SCREEN_CLICKS_KEY = "hueScreenClicks";
+
+function readScreenClicks() {
+  try {
+    const n = Number.parseInt(localStorage.getItem(SCREEN_CLICKS_KEY), 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeScreenClicks(n) {
+  try {
+    localStorage.setItem(SCREEN_CLICKS_KEY, String(n));
+  } catch {
+    // Ignore private-mode / blocked storage.
+  }
+}
 
 let unsubDates = null;
 
@@ -190,6 +216,7 @@ export const useDatesStore = defineStore("dates", {
     lists: defaultLists(),
     list: "goal",
     progressReady: false,
+    screenClicks: readScreenClicks(),
   }),
   getters: {
     dates: (state) =>
@@ -235,8 +262,23 @@ export const useDatesStore = defineStore("dates", {
       }
       return result;
     },
+    profileStats(state) {
+      const days = uniqueDayUnix(state.tracks[state.list] || []);
+      const todayUnix = dayjs().startOf("date").unix();
+      return {
+        hueStreak: currentStreak(days, todayUnix),
+        bestHueStreak: bestStreak(days),
+        dreamWeeks: dreamWeekCount(days),
+        taps: tapCount(state.tracks),
+        screenClicks: state.screenClicks,
+      };
+    },
   },
   actions: {
+    recordScreenClick() {
+      this.screenClicks += 1;
+      writeScreenClicks(this.screenClicks);
+    },
     setList(list) {
       this.list = list || "goal";
       animations.startAtCurrentDay();
