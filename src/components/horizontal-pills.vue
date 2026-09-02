@@ -5,10 +5,6 @@
       class="horizontal-pills-menu"
       :class="{ 'is-panning': panning, 'can-pan': canPan }"
       @pointerdown="onPointerDown"
-      @pointermove="onPointerMove"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerUp"
-      @lostpointercapture="onPointerUp"
     >
       <button
         v-for="(item, index) in items"
@@ -57,9 +53,11 @@
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
+  /* Browser keeps vertical page pans; horizontal overflow is driven in JS. */
   touch-action: pan-y;
   overscroll-behavior-x: contain;
   user-select: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .horizontal-pills-menu.can-pan {
@@ -188,6 +186,7 @@ export default {
       drag: null,
       didPan: false,
       panReset: null,
+      listening: false,
     };
   },
   computed: {
@@ -205,6 +204,7 @@ export default {
   },
   unmounted() {
     clearTimeout(this.panReset);
+    this.stopPointerListen();
     this.resizeObserver?.disconnect();
   },
   methods: {
@@ -239,22 +239,44 @@ export default {
       const menu = this.$refs.navMenu;
       this.canPan = Boolean(menu && menu.scrollWidth > menu.clientWidth + 1);
     },
+    startPointerListen() {
+      if (this.listening) {
+        return;
+      }
+      this.listening = true;
+      window.addEventListener("pointermove", this.onPointerMove, {
+        capture: true,
+        passive: false,
+      });
+      window.addEventListener("pointerup", this.onPointerUp, true);
+      window.addEventListener("pointercancel", this.onPointerUp, true);
+    },
+    stopPointerListen() {
+      if (!this.listening) {
+        return;
+      }
+      this.listening = false;
+      window.removeEventListener("pointermove", this.onPointerMove, true);
+      window.removeEventListener("pointerup", this.onPointerUp, true);
+      window.removeEventListener("pointercancel", this.onPointerUp, true);
+    },
     onPointerDown(event) {
       if (event.pointerType === "mouse" && event.button !== 0) {
         return;
       }
       const menu = this.$refs.navMenu;
-      if (!menu) {
+      if (!menu || !this.canPan) {
         return;
       }
       this.didPan = false;
       this.drag = {
         pointerId: event.pointerId,
         startX: event.clientX,
+        startY: event.clientY,
         startScroll: menu.scrollLeft,
         moved: false,
-        captured: false,
       };
+      this.startPointerListen();
     },
     onPointerMove(event) {
       if (!this.drag || event.pointerId !== this.drag.pointerId) {
@@ -265,25 +287,53 @@ export default {
         return;
       }
       const dx = event.clientX - this.drag.startX;
-      if (!this.drag.moved && Math.abs(dx) < 6) {
-        return;
+      const dy = event.clientY - this.drag.startY;
+      if (!this.drag.moved) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) {
+          return;
+        }
+        // Vertical intent: release so the page can keep panning.
+        if (Math.abs(dy) >= Math.abs(dx)) {
+          this.drag = null;
+          this.stopPointerListen();
+          return;
+        }
+        // Capture after axis lock so the pan survives leaving the short strip.
+        if (menu.hasPointerCapture?.(event.pointerId) !== true) {
+          try {
+            menu.setPointerCapture(event.pointerId);
+          } catch (_) {
+            /* some browsers reject capture mid-gesture */
+          }
+        }
+        this.drag = { ...this.drag, moved: true };
       }
-      if (!this.drag.captured) {
-        menu.setPointerCapture(event.pointerId);
-      }
-      this.drag = { ...this.drag, moved: true, captured: true };
       event.preventDefault();
       menu.scrollLeft = this.drag.startScroll - dx;
     },
     onPointerUp(event) {
       if (!this.drag) {
+        this.stopPointerListen();
         return;
       }
       if (event?.pointerId != null && event.pointerId !== this.drag.pointerId) {
         return;
       }
+      const menu = this.$refs.navMenu;
+      if (
+        menu &&
+        event?.pointerId != null &&
+        menu.hasPointerCapture?.(event.pointerId)
+      ) {
+        try {
+          menu.releasePointerCapture(event.pointerId);
+        } catch (_) {
+          /* already released */
+        }
+      }
       this.didPan = this.drag.moved;
       this.drag = null;
+      this.stopPointerListen();
       if (this.didPan) {
         clearTimeout(this.panReset);
         this.panReset = setTimeout(() => {
