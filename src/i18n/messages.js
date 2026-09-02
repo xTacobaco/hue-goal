@@ -5,6 +5,7 @@ export default {
     },
     cta: "I've done today's task!",
     today: "today!",
+    weekdays: "MTWTFSS",
     lists: {
       goal: "Goal",
       task: "Task",
@@ -61,6 +62,7 @@ export default {
     },
     cta: "Jag har gjort dagens uppgift!",
     today: "idag!",
+    weekdays: "MTOTFLS",
     lists: {
       goal: "Mål",
       task: "Uppgift",
