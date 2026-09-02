@@ -1,8 +1,11 @@
 <template>
   <div class="week">
-    <span v-if="firstDay" class="month" :style="firstDayStyle">{{
-      firstDay.locale($i18n.locale).format("MMMM")
-    }}</span>
+    <span
+      v-if="firstDay"
+      class="month"
+      :class="{ 'is-last': isLastMonth }"
+      :style="monthStyle"
+    >{{ firstDay.locale($i18n.locale).format("MMMM") }}</span>
     <day-node
       v-for="day in days"
       :done="unixDates.includes(day.unix())"
@@ -23,6 +26,7 @@
 import dayjs from "@/utils/dayjs";
 import dayNode from "@/components/day-node.vue";
 import arrowUrl from "@/assets/arrow.svg";
+import { dayFillCss } from "@/utils/day-color";
 
 export default {
   components: { dayNode },
@@ -91,6 +95,19 @@ export default {
         right: 0,
         transform: "translateX(100%)",
       };
+    },
+    isLastMonth() {
+      if (!this.firstDay) {
+        return false;
+      }
+      return this.firstDay.isSame(dayjs().startOf("month"), "day");
+    },
+    monthStyle() {
+      const style = { ...this.firstDayStyle };
+      if (this.isLastMonth && this.firstDay) {
+        style.color = dayFillCss(this.firstDay, this.weekdays);
+      }
+      return style;
     },
   },
   methods: {

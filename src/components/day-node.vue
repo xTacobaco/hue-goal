@@ -5,13 +5,19 @@
         :style="dayStyle"
         @click="startAnimation"
     >
-        <span v-if="cords[1] === 0" class="day-header">{{ day.format("dd")[0] }}</span>
+        <span
+            v-if="cords[1] === 0"
+            class="day-header"
+            :class="{ 'is-today': isTodayWeekday }"
+            :style="todayHeaderStyle"
+        >{{ day.format("dd")[0] }}</span>
     </span>
 </template>
 
 <script>
 import dayjs from '@/utils/dayjs';
 import { useDatesStore } from '@/datastores/dates.js';
+import { dayFillCss } from '@/utils/day-color';
 
 const speed = 50;
 const thickness = 5;
@@ -58,6 +64,16 @@ export default {
         active() {
             return this.animated || (this.done && this.loaded);
         },
+        isTodayWeekday() {
+            return this.day.isoWeekday() === dayjs().isoWeekday();
+        },
+        todayHeaderStyle() {
+            if (!this.isTodayWeekday) {
+                return undefined;
+            }
+            const today = dayjs();
+            return { color: dayFillCss(today) };
+        },
         hue() {
             return this.sampleColor(0, 0).hue;
         },
@@ -81,10 +97,10 @@ export default {
             };
         },
         dayStyle() {
-            let color = this.active
+            const color = this.active
                 ? `hsl(${this.hue}, 70%, ${this.light}%)`
                 : '#161616';
-            let border_color = this.active
+            const border_color = this.active
                 ? `hsl(${this.hue}, 70%, ${this.light - 1}%)`
                 : `#202020`;
             const style = {
