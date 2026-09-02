@@ -57,7 +57,7 @@
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
-  /* Prefer page scroll when the row does not overflow. */
+  /* Browser keeps vertical page pans; horizontal overflow is driven in JS. */
   touch-action: pan-y;
   overscroll-behavior-x: contain;
   user-select: none;
@@ -66,8 +66,6 @@
 
 .horizontal-pills-menu.can-pan {
   cursor: grab;
-  /* Let touch do native horizontal + vertical pans; mouse drag stays in JS. */
-  touch-action: pan-x pan-y;
 }
 
 .horizontal-pills-menu.is-panning {
@@ -244,8 +242,7 @@ export default {
       this.canPan = Boolean(menu && menu.scrollWidth > menu.clientWidth + 1);
     },
     onPointerDown(event) {
-      // Touch/pen use native overflow scrolling so vertical page pans still work.
-      if (event.pointerType !== "mouse" || event.button !== 0) {
+      if (event.pointerType === "mouse" && event.button !== 0) {
         return;
       }
       const menu = this.$refs.navMenu;
@@ -276,7 +273,7 @@ export default {
         if (Math.abs(dx) < 6 && Math.abs(dy) < 6) {
           return;
         }
-        // Only claim the gesture when it is clearly horizontal.
+        // Vertical (or diagonal-up) intent: drop the drag so the page can pan.
         if (Math.abs(dy) >= Math.abs(dx)) {
           this.drag = null;
           return;
