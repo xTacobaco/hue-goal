@@ -57,13 +57,17 @@
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
+  /* Prefer page scroll when the row does not overflow. */
   touch-action: pan-y;
   overscroll-behavior-x: contain;
   user-select: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .horizontal-pills-menu.can-pan {
   cursor: grab;
+  /* Let touch do native horizontal + vertical pans; mouse drag stays in JS. */
+  touch-action: pan-x pan-y;
 }
 
 .horizontal-pills-menu.is-panning {
@@ -240,17 +244,19 @@ export default {
       this.canPan = Boolean(menu && menu.scrollWidth > menu.clientWidth + 1);
     },
     onPointerDown(event) {
-      if (event.pointerType === "mouse" && event.button !== 0) {
+      // Touch/pen use native overflow scrolling so vertical page pans still work.
+      if (event.pointerType !== "mouse" || event.button !== 0) {
         return;
       }
       const menu = this.$refs.navMenu;
-      if (!menu) {
+      if (!menu || !this.canPan) {
         return;
       }
       this.didPan = false;
       this.drag = {
         pointerId: event.pointerId,
         startX: event.clientX,
+        startY: event.clientY,
         startScroll: menu.scrollLeft,
         moved: false,
         captured: false,
@@ -265,13 +271,19 @@ export default {
         return;
       }
       const dx = event.clientX - this.drag.startX;
-      if (!this.drag.moved && Math.abs(dx) < 6) {
-        return;
-      }
-      if (!this.drag.captured) {
+      const dy = event.clientY - this.drag.startY;
+      if (!this.drag.moved) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) {
+          return;
+        }
+        // Only claim the gesture when it is clearly horizontal.
+        if (Math.abs(dy) >= Math.abs(dx)) {
+          this.drag = null;
+          return;
+        }
         menu.setPointerCapture(event.pointerId);
+        this.drag = { ...this.drag, moved: true, captured: true };
       }
-      this.drag = { ...this.drag, moved: true, captured: true };
       event.preventDefault();
       menu.scrollLeft = this.drag.startScroll - dx;
     },
