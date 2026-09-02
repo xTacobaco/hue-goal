@@ -39,78 +39,54 @@
             :class="{ dragging: dragId === row.id }"
             :data-task-id="row.id"
           >
-            <template v-if="confirmId === row.id">
-              <span class="task-editor-confirm">{{
-                $t("lists.removeConfirm", { name: row.label })
-              }}</span>
-              <button
-                type="button"
-                class="task-editor-keep"
-                @click="confirmId = null"
-              >
-                {{ $t("lists.keep") }}
-              </button>
-              <button
-                type="button"
-                class="task-editor-remove"
-                @click="confirmRemove(row)"
-              >
-                {{ $t("lists.remove") }}
-              </button>
-            </template>
-            <template v-else>
-              <button
-                v-if="rows.length > 1"
-                type="button"
-                class="task-editor-grip"
-                :aria-label="$t('lists.reorder')"
-                :title="$t('lists.reorder')"
-                @pointerdown.prevent="startDrag($event, row.id)"
-                @pointermove="onDragMove"
-                @pointerup="endDrag"
-                @pointercancel="endDrag"
-              >
-                <svg viewBox="0 0 12 16" fill="none" aria-hidden="true">
-                  <circle cx="3" cy="3" r="1.15" fill="currentColor" />
-                  <circle cx="9" cy="3" r="1.15" fill="currentColor" />
-                  <circle cx="3" cy="8" r="1.15" fill="currentColor" />
-                  <circle cx="9" cy="8" r="1.15" fill="currentColor" />
-                  <circle cx="3" cy="13" r="1.15" fill="currentColor" />
-                  <circle cx="9" cy="13" r="1.15" fill="currentColor" />
-                </svg>
-              </button>
-              <input
-                class="task-editor-name"
-                type="text"
-                maxlength="20"
-                :value="row.label"
-                :aria-label="row.label"
-                @input="onRenameInput(row, $event.target.value)"
-                @blur="commitRename(row)"
-                @keydown.enter.prevent="$event.target.blur()"
-              />
-              <button
-                v-if="rows.length > 1"
-                type="button"
-                class="task-editor-icon danger"
-                :title="$t('lists.remove')"
-                :aria-label="$t('lists.remove')"
-                @click="askRemove(row)"
-              >
-                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path
-                    d="M4 4l8 8M12 4l-8 8"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                  />
-                </svg>
-              </button>
-            </template>
+            <button
+              v-if="rows.length > 1"
+              type="button"
+              class="task-editor-grip"
+              :aria-label="$t('lists.reorder')"
+              :title="$t('lists.reorder')"
+              @pointerdown.prevent="startDrag($event, row.id)"
+            >
+              <svg viewBox="0 0 12 16" fill="none" aria-hidden="true">
+                <circle cx="3" cy="3" r="1.15" fill="currentColor" />
+                <circle cx="9" cy="3" r="1.15" fill="currentColor" />
+                <circle cx="3" cy="8" r="1.15" fill="currentColor" />
+                <circle cx="9" cy="8" r="1.15" fill="currentColor" />
+                <circle cx="3" cy="13" r="1.15" fill="currentColor" />
+                <circle cx="9" cy="13" r="1.15" fill="currentColor" />
+              </svg>
+            </button>
+            <input
+              class="task-editor-name"
+              type="text"
+              maxlength="20"
+              :value="row.label"
+              :aria-label="row.label"
+              @input="onRenameInput(row, $event.target.value)"
+              @blur="commitRename(row)"
+              @keydown.enter.prevent="$event.target.blur()"
+            />
+            <button
+              v-if="rows.length > 1"
+              type="button"
+              class="task-editor-icon danger"
+              :title="$t('lists.remove')"
+              :aria-label="$t('lists.remove')"
+              @click="remove(row)"
+            >
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path
+                  d="M4 4l8 8M12 4l-8 8"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
           </li>
         </ul>
         <form
-          v-if="adding"
+          v-if="rows.length < MAX_LISTS"
           class="task-editor-add-form"
           @submit.prevent="commitAdd"
         >
@@ -122,36 +98,15 @@
             maxlength="20"
             :placeholder="$t('lists.addPlaceholder')"
             :aria-label="$t('lists.add')"
-            @keydown.escape.stop.prevent="cancelAdd"
           />
           <button
             type="submit"
-            class="task-editor-add-submit"
+            class="task-editor-add"
             :disabled="!draft.trim()"
           >
             {{ $t("lists.add") }}
           </button>
         </form>
-        <button
-          v-else
-          type="button"
-          class="task-editor-add"
-          :disabled="rows.length >= MAX_LISTS"
-          @click="beginAdd"
-        >
-          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path
-              d="M8 3.2v9.6M3.2 8h9.6"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linecap="round"
-            />
-          </svg>
-          {{ $t("lists.add") }}
-        </button>
-        <button type="button" class="task-editor-done" @click="close">
-          {{ $t("lists.done") }}
-        </button>
       </div>
     </div>
   </Teleport>
@@ -176,10 +131,9 @@ export default {
   data() {
     return {
       rows: [],
-      confirmId: null,
-      adding: false,
       draft: "",
       dragId: null,
+      dragPointerId: null,
       orderDirty: false,
       previousOverflow: "",
       MAX_LISTS,
@@ -202,36 +156,29 @@ export default {
     document.body.style.overflow = "hidden";
     this.onWindowKey = (event) => {
       if (event.key === "Escape") {
-        this.onEscape();
+        this.close();
       }
     };
     window.addEventListener("keydown", this.onWindowKey);
     this.$nextTick(() => {
       if (this.startAdding) {
-        this.beginAdd();
+        this.$refs.addInput?.focus();
         return;
       }
       this.$refs.dialog?.focus();
     });
   },
   unmounted() {
+    this.unbindDrag();
     window.removeEventListener("keydown", this.onWindowKey);
     document.body.style.overflow = this.previousOverflow;
   },
   methods: {
     close() {
+      if (this.dragId) {
+        return;
+      }
       this.$emit("close");
-    },
-    onEscape() {
-      if (this.confirmId) {
-        this.confirmId = null;
-        return;
-      }
-      if (this.adding) {
-        this.cancelAdd();
-        return;
-      }
-      this.close();
     },
     rowFromTask(task) {
       return {
@@ -240,7 +187,7 @@ export default {
       };
     },
     syncRows(items) {
-      if (this.dragId) {
+      if (this.dragId || this.orderDirty) {
         return;
       }
       const incoming = (items || []).map((task) => this.rowFromTask(task));
@@ -285,37 +232,16 @@ export default {
         row.label = originalLabel;
       }
     },
-    askRemove(row) {
-      if (this.rows.length <= 1) {
-        return;
-      }
-      this.confirmId = row.id;
-    },
-    async confirmRemove(row) {
+    async remove(row) {
       if (this.rows.length <= 1) {
         return;
       }
       try {
         const userId = await this.ensureUserId();
         await this.removeList({ userId, id: row.id });
-        this.confirmId = null;
       } catch {
-        this.confirmId = null;
+        // Keep the row visible if the write fails.
       }
-    },
-    beginAdd() {
-      if (this.rows.length >= MAX_LISTS) {
-        return;
-      }
-      this.adding = true;
-      this.draft = "";
-      this.$nextTick(() => {
-        this.$refs.addInput?.focus();
-      });
-    },
-    cancelAdd() {
-      this.adding = false;
-      this.draft = "";
     },
     async commitAdd() {
       const label = this.draft.trim();
@@ -326,25 +252,41 @@ export default {
         const userId = await this.ensureUserId();
         const list = await this.addList({ userId, label });
         if (list) {
-          this.cancelAdd();
+          this.draft = "";
         }
       } catch {
-        // Keep the add field open so the label is not lost if the write fails.
+        // Keep the draft so the label is not lost if the write fails.
       }
     },
+    bindDrag() {
+      window.addEventListener("pointermove", this.onDragMove, true);
+      window.addEventListener("pointerup", this.endDrag, true);
+      window.addEventListener("pointercancel", this.endDrag, true);
+    },
+    unbindDrag() {
+      window.removeEventListener("pointermove", this.onDragMove, true);
+      window.removeEventListener("pointerup", this.endDrag, true);
+      window.removeEventListener("pointercancel", this.endDrag, true);
+    },
     startDrag(event, id) {
-      if (this.rows.length <= 1 || this.confirmId) {
+      if (this.rows.length <= 1) {
         return;
       }
       if (event.pointerType === "mouse" && event.button !== 0) {
         return;
       }
       this.dragId = id;
+      this.dragPointerId = event.pointerId;
       this.orderDirty = false;
-      event.currentTarget.setPointerCapture(event.pointerId);
+      this.bindDrag();
+      event.currentTarget.setPointerCapture?.(event.pointerId);
     },
     onDragMove(event) {
-      if (!this.dragId) {
+      if (!this.dragId || event.pointerId !== this.dragPointerId) {
+        return;
+      }
+      if (event.buttons === 0) {
+        this.endDrag(event);
         return;
       }
       const el = document.elementFromPoint(event.clientX, event.clientY);
@@ -363,22 +305,33 @@ export default {
       this.rows = next;
       this.orderDirty = true;
     },
-    async endDrag() {
-      if (!this.dragId) {
+    async endDrag(event) {
+      if (
+        event?.pointerId != null &&
+        this.dragPointerId != null &&
+        event.pointerId !== this.dragPointerId
+      ) {
         return;
       }
+      if (!this.dragId) {
+        this.unbindDrag();
+        return;
+      }
+      this.unbindDrag();
       this.dragId = null;
+      this.dragPointerId = null;
       if (!this.orderDirty) {
         return;
       }
-      this.orderDirty = false;
       try {
         const userId = await this.ensureUserId();
         await this.reorderLists({
           userId,
           orderedIds: this.rows.map((row) => row.id),
         });
+        this.orderDirty = false;
       } catch {
+        this.orderDirty = false;
         this.syncRows(this.tasks);
       }
     },
@@ -444,84 +397,10 @@ export default {
   gap: 6px;
   padding: 4px;
   border-radius: 8px;
-  border: 1px solid transparent;
 }
 
 .task-editor-row.dragging {
   opacity: 0.45;
-  border-style: dashed;
-  border-color: #363636;
-}
-
-.task-editor-confirm {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  color: #c8c8c8;
-  padding: 4px 2px;
-}
-
-.task-editor-keep,
-.task-editor-remove {
-  border: none;
-  border-radius: 6px;
-  padding: 5px 9px;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.task-editor-keep {
-  background: transparent;
-  color: #c8c8c8;
-}
-
-.task-editor-remove {
-  background: #e05656;
-  color: #fff;
-}
-
-.task-editor-add-submit {
-  flex-shrink: 0;
-  height: 40px;
-  padding: 0 16px;
-  border: none;
-  border-radius: 999px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  cursor: pointer;
-  white-space: nowrap;
-  background-color: hsl(271, 70%, 50%);
-  background-image: linear-gradient(
-    30deg,
-    hsl(271, 70%, 50%),
-    hsl(239, 70%, 50%)
-  );
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
-}
-
-.task-editor-add-submit:disabled {
-  background-color: hsl(271, 70%, 35%);
-  background-image: linear-gradient(
-    45deg,
-    hsl(271, 70%, 35%),
-    hsl(239, 70%, 35%)
-  );
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-@media (hover: hover) {
-  .task-editor-add-submit:hover:not(:disabled) {
-    background-color: hsl(271, 70%, 40%);
-    background-image: linear-gradient(
-      30deg,
-      hsl(271, 70%, 40%),
-      hsl(239, 70%, 40%)
-    );
-  }
 }
 
 .task-editor-grip,
@@ -565,26 +444,25 @@ export default {
   color: #e05656;
 }
 
-.task-editor-icon:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
 .task-editor-name {
   flex: 1;
   min-width: 0;
   background: #161616;
   color: #fff;
-  border: 1px solid #363636;
+  border: none;
   border-radius: 8px;
   padding: 8px 10px;
   font: inherit;
   font-size: 14px;
   outline: none;
+  box-shadow: none;
 }
 
-.task-editor-name:focus {
-  border-color: #7229d4;
+.task-editor-name:focus,
+.task-editor-name:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border: none;
 }
 
 .task-editor-add-form {
@@ -594,60 +472,52 @@ export default {
   margin-top: 10px;
 }
 
-.task-editor-add,
-.task-editor-done {
-  width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: none;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  color: #fff;
-}
-
 .task-editor-add {
-  margin-top: 10px;
-  padding: 9px;
-  border-radius: 999px;
-  border: 1.5px solid #3a3a3a;
-  background: #1a1a1a;
-  font-size: 13px;
-}
-
-.task-editor-add:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.task-editor-add svg {
-  width: 13px;
-  height: 13px;
-}
-
-.task-editor-done {
-  margin-top: 12px;
+  flex-shrink: 0;
   height: 40px;
+  padding: 0 16px;
+  border: none;
   border-radius: 999px;
+  color: #fff;
+  font: inherit;
   font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
   background-color: hsl(271, 70%, 50%);
   background-image: linear-gradient(
     30deg,
     hsl(271, 70%, 50%),
     hsl(239, 70%, 50%)
   );
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
+}
+
+.task-editor-add:disabled {
+  background-color: hsl(271, 70%, 35%);
+  background-image: linear-gradient(
+    45deg,
+    hsl(271, 70%, 35%),
+    hsl(239, 70%, 35%)
+  );
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .task-editor-add:hover:not(:disabled) {
+    background-color: hsl(271, 70%, 40%);
+    background-image: linear-gradient(
+      30deg,
+      hsl(271, 70%, 40%),
+      hsl(239, 70%, 40%)
+    );
+  }
 }
 
 .task-editor-icon:focus-visible,
 .task-editor-grip:focus-visible,
-.task-editor-name:focus-visible,
-.task-editor-add:focus-visible,
-.task-editor-done:focus-visible,
-.task-editor-keep:focus-visible,
-.task-editor-remove:focus-visible,
-.task-editor-add-submit:focus-visible {
+.task-editor-add:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
