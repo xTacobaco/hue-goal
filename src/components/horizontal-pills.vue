@@ -53,19 +53,30 @@
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
-  /* Browser keeps vertical page pans; horizontal overflow is driven in JS. */
-  touch-action: pan-y;
   overscroll-behavior-x: contain;
   user-select: none;
   -webkit-overflow-scrolling: touch;
+  /* Prefer vertical page scroll when the row does not overflow. */
+  touch-action: pan-y;
 }
 
 .horizontal-pills-menu.can-pan {
   cursor: grab;
+  /*
+    Let touch use native overflow scrolling on both axes.
+    Mouse drag-to-scroll is handled in JS only.
+  */
+  touch-action: pan-x pan-y;
+}
+
+.horizontal-pills-menu.can-pan .gmf-horizontal-pills-item {
+  /* Keep buttons from reclaiming the gesture from the scroller. */
+  touch-action: pan-x pan-y;
 }
 
 .horizontal-pills-menu.is-panning {
   cursor: grabbing;
+  scroll-snap-type: none;
 }
 
 .horizontal-pills-menu.is-panning .gmf-horizontal-pills-item {
@@ -100,6 +111,7 @@
   line-height: 1.1rem;
   position: relative;
   -webkit-tap-highlight-color: transparent;
+  touch-action: inherit;
 }
 
 .gmf-horizontal-pills-item.gmf-done {
@@ -201,6 +213,7 @@ export default {
     if (this.$refs.navMenu) {
       this.resizeObserver.observe(this.$refs.navMenu);
     }
+    this.$nextTick(() => this.scrollSelectedIntoCenter(false));
   },
   unmounted() {
     clearTimeout(this.panReset);
@@ -215,6 +228,7 @@ export default {
       }
       this.selectedIndex = index;
       this.$emit("update:selectedItem", this.items[index]);
+      this.$nextTick(() => this.scrollSelectedIntoCenter(true));
     },
     syncSelectedIndex() {
       const index = this.getItemIndex(this.selectedItem);
@@ -239,6 +253,29 @@ export default {
       const menu = this.$refs.navMenu;
       this.canPan = Boolean(menu && menu.scrollWidth > menu.clientWidth + 1);
     },
+    scrollSelectedIntoCenter(smooth = true) {
+      const menu = this.$refs.navMenu;
+      if (!menu) {
+        return;
+      }
+      const item = menu.children[this.selectedIndex];
+      if (!item) {
+        return;
+      }
+      const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+      const left = Math.max(
+        0,
+        Math.min(
+          itemCenter - menu.clientWidth / 2,
+          menu.scrollWidth - menu.clientWidth,
+        ),
+      );
+      if (typeof menu.scrollTo === "function") {
+        menu.scrollTo({ left, behavior: smooth ? "smooth" : "auto" });
+      } else {
+        menu.scrollLeft = left;
+      }
+    },
     startPointerListen() {
       if (this.listening) {
         return;
@@ -261,7 +298,8 @@ export default {
       window.removeEventListener("pointercancel", this.onPointerUp, true);
     },
     onPointerDown(event) {
-      if (event.pointerType === "mouse" && event.button !== 0) {
+      // Touch/pen use native overflow scrolling — custom drag is mouse-only.
+      if (event.pointerType !== "mouse" || event.button !== 0) {
         return;
       }
       const menu = this.$refs.navMenu;
@@ -292,18 +330,16 @@ export default {
         if (Math.abs(dx) < 6 && Math.abs(dy) < 6) {
           return;
         }
-        // Vertical intent: release so the page can keep panning.
         if (Math.abs(dy) >= Math.abs(dx)) {
           this.drag = null;
           this.stopPointerListen();
           return;
         }
-        // Capture after axis lock so the pan survives leaving the short strip.
         if (menu.hasPointerCapture?.(event.pointerId) !== true) {
           try {
             menu.setPointerCapture(event.pointerId);
           } catch (_) {
-            /* some browsers reject capture mid-gesture */
+            /* ignore */
           }
         }
         this.drag = { ...this.drag, moved: true };
@@ -345,10 +381,14 @@ export default {
   watch: {
     items() {
       this.syncSelectedIndex();
-      this.$nextTick(() => this.updateOverflow());
+      this.$nextTick(() => {
+        this.updateOverflow();
+        this.scrollSelectedIntoCenter(false);
+      });
     },
     selectedItem() {
       this.syncSelectedIndex();
+      this.$nextTick(() => this.scrollSelectedIntoCenter(true));
     },
   },
 };
